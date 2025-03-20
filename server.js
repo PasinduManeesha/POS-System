@@ -10,7 +10,7 @@ import billsRouter from './routes/billsRoutes.js';
 //require('colors');
 
 dotenv.config();
-
+console.log("MONGODB_URI from .env:", process.env.MONGODB_URI);
 //Connect with MongoDB
 mongoose.connect(process.env.MONGODB_URI).then(() => {
     console.log("Connected to DB");

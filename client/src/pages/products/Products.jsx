@@ -87,51 +87,37 @@ const Products = () => {
   ]
 
   const handlerSubmit = async (value) => {
-    //console.log(value);
-    if(editProduct === null) {
-      try {
-        dispatch({
-          type: "SHOW_LOADING",
-        });
+    console.log("editProduct:", editProduct);
+    console.log("value:", value);
+  
+    const isAddingNew = !editProduct; // True if editProduct is null or undefined
+  
+    try {
+      dispatch({ type: "SHOW_LOADING" });
+  
+      if (isAddingNew) {
         const res = await axios.post('/api/products/addproducts', value);
-        message.success("Product Added Successfully!")
-        getAllProducts();
-        setPopModal(false);
-        dispatch({
-          type: "HIDE_LOADING",
-        });
-        
-  
-      } catch(error) {
-        dispatch({
-          type: "HIDE_LOADING",
-        });
-        message.error("Error!")
-        console.log(error);
+        message.success("Product Added Successfully!");
+      } else {
+        await axios.put('/api/products/updateproducts', { ...value, productId: editProduct._id });
+        message.success("Product Updated Successfully!");
       }
-    } else {
-      try {
-        dispatch({
-          type: "SHOW_LOADING",
-        });
-       await axios.put('/api/products/updateproducts', {...value, productId:editProduct._id});
-        message.success("Product Updated Successfully!")
-        getAllProducts();
-        setPopModal(false);
-        dispatch({
-          type: "HIDE_LOADING",
-        });
-        
   
-      } catch(error) {
-        dispatch({
-          type: "HIDE_LOADING",
-        });
-        message.error("Error!")
-        console.log(error);
+      getAllProducts();
+      setPopModal(false);
+    } catch (error) {
+      console.error("API Error:", error);
+      if (error.response) {
+        message.error(`Error: ${error.response.data.message || error.response.statusText}`);
+      } else if (error.request) {
+        message.error("Error: Could not connect to the server.");
+      } else {
+        message.error(`Error: ${error.message}`);
       }
+    } finally {
+      dispatch({ type: "HIDE_LOADING" });
     }
-  }
+  };
 
   return (
     <LayoutApp>

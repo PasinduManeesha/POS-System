@@ -35,17 +35,20 @@ const Customers = () => {
   // Delete a customer
   const handlerDelete = async (record) => {
     try {
-      dispatch({ type: 'SHOW_LOADING' });
-      await axios.post('/api/customers/deletecustomer', { customerId: record._id });
-      message.success('Customer Deleted Successfully!');
-      getAllCustomers(); // Refresh the customer list
-      dispatch({ type: 'HIDE_LOADING' });
+        dispatch({ type: 'SHOW_LOADING' });
+
+        await axios.delete(`/api/customers/deletecustomer/${record._id}`);
+
+        message.success('Customer Deleted Successfully!');
+        getAllCustomers(); // Refresh the customer list
     } catch (error) {
-      dispatch({ type: 'HIDE_LOADING' });
-      console.log(error);
-      message.error('Something went wrong');
+        console.error('Error deleting customer:', error);
+        message.error('Failed to delete customer. Please try again.');
+    } finally {
+        dispatch({ type: 'HIDE_LOADING' });
     }
-  };
+};
+
 
   // Handle form submission for adding or editing a customer
   const handlerSubmit = async (values) => {

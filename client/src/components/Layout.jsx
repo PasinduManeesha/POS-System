@@ -7,6 +7,9 @@ import {
   UserSwitchOutlined,
   MoneyCollectOutlined,
   LogoutOutlined,
+  DatabaseOutlined,
+  UserDeleteOutlined,
+  CarOutlined,
   ShoppingCartOutlined
 } from '@ant-design/icons';
 import './layout.css';
@@ -16,8 +19,8 @@ import Spinner from './Spinner';
 
 const { Header, Sider, Content } = Layout;
 
-const LayoutApp = ({children}) => {
-  const {cartItems, loading} = useSelector(state => state.rootReducer);
+const LayoutApp = ({ children }) => {
+  const { cartItems, loading } = useSelector(state => state.rootReducer);
 
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
@@ -35,24 +38,35 @@ const LayoutApp = ({children}) => {
       {loading && <Spinner />}
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div className="logo">
-            <h2 className="logo-title">POS SYSTEM</h2>
+          <CarOutlined /> {/* Icon placed directly in JSX */}
+          <h2 className="logo-title">Senuri Auto</h2>
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={window.location.pathname}>
-            <Menu.Item key='/' icon={<HomeOutlined />}>
-                <Link to="/">Home</Link>
-            </Menu.Item>
-            <Menu.Item key='/bills' icon={<MoneyCollectOutlined />}>
-                <Link to="/bills">Bills</Link>
-            </Menu.Item>
-            <Menu.Item key="/products" icon={<HomeOutlined />}>
-                <Link to="/products">Products</Link>
-            </Menu.Item>
-            <Menu.Item key='/customers' icon={<UserSwitchOutlined />}>
-                <Link to="/customers">Customers</Link>
-            </Menu.Item>
-            <Menu.Item key='/logout' icon={<LogoutOutlined />} onClick={() => {localStorage.removeItem("auth"); navigate("/login");}}>
-                LogOut
-            </Menu.Item>
+          <Menu.Item key='/' icon={<HomeOutlined />}>
+            <Link to="/">Home</Link>
+          </Menu.Item>
+          <Menu.Item key='/bills' icon={<MoneyCollectOutlined />}>
+            <Link to="/bills">Bills</Link>
+          </Menu.Item>
+          <Menu.Item key="/products" icon={<HomeOutlined />}>
+            <Link to="/products">Products</Link>
+          </Menu.Item>
+          <Menu.Item key='/customers' icon={<UserSwitchOutlined />}>
+            <Link to="/customers">Customers</Link>
+          </Menu.Item>
+
+          <Menu.Item key='/supplier' icon={<UserDeleteOutlined />}>
+            <Link to="/supplier">Suppliers</Link>
+          </Menu.Item>
+
+
+          <Menu.Item key='/category' icon={<DatabaseOutlined />}>
+            <Link to="/category">Category</Link>
+          </Menu.Item>
+
+          <Menu.Item key='/logout' icon={<LogoutOutlined />} onClick={() => { localStorage.removeItem("auth"); navigate("/login"); }}>
+            LogOut
+          </Menu.Item>
         </Menu>
       </Sider>
       <Layout className="site-layout">

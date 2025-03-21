@@ -9,39 +9,83 @@ import userRouter from './routes/userRoutes.js';
 import billsRouter from './routes/billsRoutes.js';
 import customerRouter from './routes/customerRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
-//require('colors');
+import supplierRoutes from './routes/supplierRoutes.js';
+import Counter from './models/counterModel.js';
 
 dotenv.config();
-console.log("MONGODB_URI from .env:", process.env.MONGODB_URI);
-//Connect with MongoDB
-mongoose.connect(process.env.MONGODB_URI).then(() => {
-    console.log("Connected to DB");
-}).catch((err) => {
-    console.log(err.message);
-});
+
+// Database connection
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('MongoDB Connected');
+
+    // Initialize counter collection
+    await Counter.findByIdAndUpdate(
+      { _id: 'billNumber' },
+      { seq: 0 },
+      { upsert: true }
+    );
+    console.log('Counter initialized');
+    
+  } catch (err) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+};
+
+connectDB();
 
 const app = express();
 
-//middlewares
-app.use(cors());
+// Middlewares
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true
+}));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan('dev'));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}))
-app.use(morgan("dev"));
+// Remove duplicate billsRouter route
+const routes = [
+  { path: '/api/products', router: productRouter },
+  { path: '/api/users', router: userRouter },
+  { path: '/api/bills', router: billsRouter },
+  { path: '/api/customers', router: customerRouter },
+  { path: '/api/categories', router: categoryRoutes },
+  { path: '/api/suppliers', router: supplierRoutes },
+];
 
-//routes
-app.use('/api/products/', productRouter);
-app.use('/api/users/', userRouter);
-app.use('/api/bills/', billsRouter);
-app.use('/api/bills/', billsRouter);
-app.use('/api/customers/', customerRouter);
-app.use("/api/categories/", categoryRoutes);
+// Register routes
+routes.forEach(({ path, router }) => {
+  app.use(path, router);
+});
 
-//Create Port 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'production' ? undefined : err.message
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Server is healthy',
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
-//Listen
 app.listen(PORT, () => {
-    console.log(`Serve at running on the port: http://localhost:${PORT}`);
-} )
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode`);
+  console.log(`Server listening on port ${PORT}`);
+});

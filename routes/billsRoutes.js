@@ -1,18 +1,10 @@
 import express from "express";
-import { 
-    createCustomerController, 
-    getAllCustomersController, 
-    getCustomerByIdController, 
-    updateCustomerController, 
-    deleteCustomerController 
-} from "../controllers/customerController.js";
+import { addBillsController, getBillsController } from "../controllers/billsController.js";
 
-const customerRouter = express.Router();
+const billsRouter = express.Router();
 
-customerRouter.post("/addcustomer", createCustomerController);
-customerRouter.get("/getcustomers", getAllCustomersController);
-customerRouter.get("/getcustomer/:id", getCustomerByIdController);
-customerRouter.put("/updatecustomer/:id", updateCustomerController);
-customerRouter.delete("/deletecustomer/:id", deleteCustomerController);
+billsRouter.post("/addbills", addBillsController);
 
-export default customerRouter;
+billsRouter.get("/getbills", getBillsController);
+
+export default billsRouter;

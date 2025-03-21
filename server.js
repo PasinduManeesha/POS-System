@@ -36,7 +36,7 @@ app.use('/api/users/', userRouter);
 app.use('/api/bills/', billsRouter);
 app.use('/api/bills/', billsRouter);
 app.use('/api/customers/', customerRouter);
-app.use("/api/categories", categoryRoutes);
+app.use("/api/categories/", categoryRoutes);
 
 //Create Port 
 const PORT = process.env.PORT || 5000;

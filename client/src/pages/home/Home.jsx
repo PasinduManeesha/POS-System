@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import LayoutApp from '../../components/Layout';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import "./home.css";
 
 const POSBilling = () => {
@@ -15,7 +16,7 @@ const POSBilling = () => {
     unitPrice: "",
     quantity: "",
   });
-  const [editingIndex, setEditingIndex] = useState(null); // Track the index of the product being edited
+  const [editingIndex, setEditingIndex] = useState(null); 
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
   const [amountPaid, setAmountPaid] = useState("");
 
@@ -62,8 +63,8 @@ const POSBilling = () => {
 
   return (
     <LayoutApp>
-      <div className="p-6 bg-gray-100 min-h-screen flex justify-center items-center">
-        <div className="bg-white p-6 rounded shadow-lg w-full max-w-4xl">
+      <div className="p-6  min-h-screen flex justify-center items-center">
+        <div className="bg-white p-6  w-full max-w-4xl">
           <h2 className="text-lg font-bold mb-4">Billing System</h2>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
@@ -91,7 +92,7 @@ const POSBilling = () => {
               <input type="number" placeholder="Unit Price" value={newProduct.unitPrice} onChange={(e) => setNewProduct({ ...newProduct, unitPrice: parseFloat(e.target.value) || "" })} className="border p-2" />
               <input type="number" placeholder="Quantity" value={newProduct.quantity} onChange={(e) => setNewProduct({ ...newProduct, quantity: parseInt(e.target.value) || "" })} className="border p-2" />
             </div>
-            <button onClick={addProduct} className="mt-2 bg-blue-500 text-white p-2 addToCardBtn rounded">
+            <button onClick={addProduct} className="mt-2 bg-blue-500 text-black p-2 addToCardBtn rounded">
               {editingIndex !== null ? "Update Product" : "Add to Cart"}
             </button>
           </div>
@@ -155,11 +156,11 @@ const POSBilling = () => {
             <span>Remaining Amount to be Paid:</span>
             <span>${remainingAmount()}</span>
           </div>
-          <div className="flex justify-between">
-            <button className="bg-green-500 text-white p-2 rounded" onClick={handlePrint}>Bill Print</button>
-            <button className="bg-yellow-500 text-white p-2 rounded">Suspend</button>
-            <button className="bg-blue-500 text-white p-2 rounded">New Display</button>
-            <button className="bg-gray-500 text-white p-2 rounded">End Storage</button>
+          <div className="flex justify-between m-">
+            <button className="bg-green-500 text-black p-2 rounded" onClick={handlePrint}>Bill Print</button>
+            <button className="bg-yellow-500 text-black p-2 rounded">Suspend</button>
+            <button className="bg-blue-500 text-black p-2 rounded">New Display</button>
+            <button className="bg-gray-500 text-black p-2 rounded">End Storage</button>
           </div>
 
           {/* Printable Bill Section */}
@@ -212,11 +213,11 @@ const POSBilling = () => {
               </div>
               <div className="flex justify-between font-bold mb-4">
                 <span>Amount Paid:</span>
-                <span>${amountPaid}</span>
+                <span>Rs.{amountPaid}</span>
               </div>
               <div className="flex justify-between font-bold mb-4">
                 <span>Remaining Amount to be Paid:</span>
-                <span>${remainingAmount()}</span>
+                <span>Rs.{remainingAmount()}</span>
               </div>
             </div>
           </div>

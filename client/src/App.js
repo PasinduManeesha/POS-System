@@ -10,6 +10,7 @@ import Bills from './pages/bills/Bills';
 import Customers from './pages/customers/Customers';
 import Category from './pages/category/category';
 import Suppliers from './pages/suppliers/suppliers';
+import Inventory from './pages/inventory/inventory';
 
 function App() {
   return (
@@ -26,6 +27,13 @@ function App() {
               <Products />
             </ProtectedRouter>
             } />
+
+<Route path="/inventory" element={
+            <ProtectedRouter>
+              <Inventory />
+            </ProtectedRouter>
+            } />
+
           <Route path="/cart" element={
             <ProtectedRouter>
               <Cart />
@@ -42,7 +50,7 @@ function App() {
             </ProtectedRouter>
             } />
 
-<Route path="/supplier" element={
+            <Route path="/supplier" element={
             <ProtectedRouter>
               <Suppliers />
             </ProtectedRouter>

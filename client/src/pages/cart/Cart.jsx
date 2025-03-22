@@ -132,7 +132,7 @@ const Cart = () => {
                 <h3>Total: ${(Number(subTotal) + Number(((subTotal / 100) * 10).toFixed(2))).toFixed(2)}</h3>
             </div>
             <div className="form-btn-add">
-              <Button htmlType='submit' className='add-new'>Generate Invoice</Button>
+              <Button  htmlType='submit' className='add-new'>Generate Invoice</Button>
             </div>  
         </Form>
       </Modal>

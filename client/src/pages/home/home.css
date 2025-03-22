@@ -79,3 +79,27 @@
   top: 0;
   background-color: #f9fafb; /* Match the background color of your table header */
 }
+.customer-dropdown {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+  width: 100%;
+}
+
+.dropdown-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: #f0f0f0;
+}
+
+.save-customer {
+  background: #4caf50;
+  color: black;
+  text-align: center;
+}

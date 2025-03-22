@@ -1,14 +1,15 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
 import LayoutApp from '../../components/Layout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./home.css";
+import axios from "axios";
 
 const POSBilling = () => {
-  const [invoiceNumber, setInvoiceNumber] = useState("53011");
-  const [customerNumber, setCustomerNumber] = useState("0001");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [customerNumber, setCustomerNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [date, setDate] = useState("2025-03-21");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [products, setProducts] = useState([]);
   const [newProduct, setNewProduct] = useState({
     subNumber: "",
@@ -16,55 +17,145 @@ const POSBilling = () => {
     unitPrice: "",
     quantity: "",
   });
-  const [editingIndex, setEditingIndex] = useState(null); 
+  const [editingIndex, setEditingIndex] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
   const [amountPaid, setAmountPaid] = useState("");
+  const [customers, setCustomers] = useState([]); // List of customers from the database
+  const [filteredCustomers, setFilteredCustomers] = useState([]); // Filtered list for dropdown
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [isTypingCustomerNumber, setIsTypingCustomerNumber] = useState(false); // Track which field is being typed
 
   const componentRef = useRef();
 
-  const addProduct = () => {
-    if (newProduct.subNumber && newProduct.itemDescription && newProduct.unitPrice && newProduct.quantity) {
-      if (editingIndex !== null) {
-        // If editing, update the existing product
-        const updatedProducts = [...products];
-        updatedProducts[editingIndex] = newProduct;
-        setProducts(updatedProducts);
-        setEditingIndex(null); // Reset editing state
-      } else {
-        // If not editing, add a new product
-        setProducts([...products, newProduct]);
+  // Auto-generate invoice number on component load
+  useEffect(() => {
+    const generateInvoiceNumber = () => {
+      const randomNumber = Math.floor(Math.random() * 100000);
+      setInvoiceNumber(`INV-${randomNumber.toString().padStart(5, "0")}`);
+    };
+    generateInvoiceNumber();
+  }, []);
+
+  // Fetch customers from the database
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const { data } = await axios.get("/api/customers/getcustomers");
+        setCustomers(data);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
       }
-      setNewProduct({ subNumber: "", itemDescription: "", unitPrice: "", quantity: "" }); // Clear the form
+    };
+    fetchCustomers();
+  }, []);
+
+  // Filter customers based on input
+  const filterCustomers = (input) => {
+    if (isTypingCustomerNumber) {
+      // Filter by Customer Number
+      const filtered = customers.filter((customer) =>
+        customer.customerPhone.includes(input)
+      );
+      setFilteredCustomers(filtered);
+    } else {
+      // Filter by Customer Name
+      const filtered = customers.filter((customer) =>
+        customer.customerName.toLowerCase().includes(input.toLowerCase())
+      );
+      setFilteredCustomers(filtered);
+    }
+    setShowCustomerDropdown(true);
+  };
+
+  // Handle customer number input
+  const handleCustomerNumberChange = (e) => {
+    const value = e.target.value;
+    setCustomerNumber(value);
+    setIsTypingCustomerNumber(true); // Indicate that we're typing in the Customer Number field
+    filterCustomers(value); // Filter by Customer Number
+  };
+
+  // Handle customer name input
+  const handleCustomerNameChange = (e) => {
+    const value = e.target.value;
+    setCustomerName(value);
+    setIsTypingCustomerNumber(false); // Indicate that we're typing in the Customer Name field
+    filterCustomers(value); // Filter by Customer Name
+  };
+
+  // Select customer from dropdown
+  const selectCustomer = (customer) => {
+    setCustomerNumber(customer.customerPhone);
+    setCustomerName(customer.customerName);
+    setShowCustomerDropdown(false);
+  };
+
+  // Save new customer
+  const saveCustomer = async () => {
+    if (!customerNumber || !customerName) {
+      alert("Please enter both customer number and name.");
+      return;
+    }
+    try {
+      const { data } = await axios.post("/api/customers/addcustomer", {
+        customerName,
+        customerPhone: customerNumber,
+      });
+      setCustomers([...customers, data]);
+      alert("Customer saved successfully!");
+    } catch (error) {
+      console.error("Error saving customer:", error);
+      alert("Failed to save customer.");
     }
   };
 
+  // Add or update product
+  const addProduct = () => {
+    if (newProduct.subNumber && newProduct.itemDescription && newProduct.unitPrice && newProduct.quantity) {
+      if (editingIndex !== null) {
+        const updatedProducts = [...products];
+        updatedProducts[editingIndex] = newProduct;
+        setProducts(updatedProducts);
+        setEditingIndex(null);
+      } else {
+        setProducts([...products, newProduct]);
+      }
+      setNewProduct({ subNumber: "", itemDescription: "", unitPrice: "", quantity: "" });
+    }
+  };
+
+  // Remove product
   const removeProduct = (index) => {
     const updatedProducts = products.filter((_, i) => i !== index);
     setProducts(updatedProducts);
   };
 
+  // Edit product
   const editProduct = (index) => {
     const productToEdit = products[index];
-    setNewProduct(productToEdit); // Populate the form with the product to edit
-    setEditingIndex(index); // Set the editing index
+    setNewProduct(productToEdit);
+    setEditingIndex(index);
   };
 
+  // Calculate total
   const calculateTotal = () => {
     return products.reduce((total, product) => total + product.unitPrice * product.quantity, 0).toFixed(2);
   };
 
+  // Calculate remaining amount
   const remainingAmount = () => {
     return (amountPaid - calculateTotal()).toFixed(2);
   };
 
+  // Handle print
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
   });
 
   return (
     <LayoutApp>
-      <div className="p-6  min-h-screen flex justify-center items-center">
-        <div className="bg-white p-6  w-full max-w-4xl">
+      <div className="p-6 min-h-screen flex justify-center items-center">
+        <div className="bg-white p-6 w-full max-w-4xl">
           <h2 className="text-lg font-bold mb-4">Billing System</h2>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
@@ -77,11 +168,55 @@ const POSBilling = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Customer Number</label>
-              <input type="text" value={customerNumber} readOnly className="mt-1 block w-full border p-2" />
+              <input
+                type="text"
+                placeholder="Customer Number"
+                value={customerNumber}
+                onChange={handleCustomerNumberChange}
+                className="mt-1 block w-full border p-2"
+              />
+              {showCustomerDropdown && isTypingCustomerNumber && (
+                <div className="customer-dropdown">
+                  {filteredCustomers.map((customer) => (
+                    <div
+                      key={customer._id}
+                      className="dropdown-item"
+                      onClick={() => selectCustomer(customer)}
+                    >
+                      {customer.customerPhone} - {customer.customerName} {/* Show both Number and Name */}
+                    </div>
+                  ))}
+                  <button onClick={saveCustomer} className="dropdown-item save-customer">
+                    Save New Customer
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Customer Name</label>
-              <input type="text" placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="mt-1 block w-full border p-2" />
+              <input
+                type="text"
+                placeholder="Customer Name"
+                value={customerName}
+                onChange={handleCustomerNameChange}
+                className="mt-1 block w-full border p-2"
+              />
+              {showCustomerDropdown && !isTypingCustomerNumber && (
+                <div className="customer-dropdown">
+                  {filteredCustomers.map((customer) => (
+                    <div
+                      key={customer._id}
+                      className="dropdown-item"
+                      onClick={() => selectCustomer(customer)}
+                    >
+                      {customer.customerName} - {customer.customerPhone} {/* Show both Name and Number */}
+                    </div>
+                  ))}
+                  <button onClick={saveCustomer} className="dropdown-item save-customer">
+                    Save New Customer
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <div className="mb-4">

@@ -8,6 +8,8 @@ import Login from './pages/login/Login';
 import Register from './pages/register/Register';
 import Bills from './pages/bills/Bills';
 import Customers from './pages/customers/Customers';
+import Category from './pages/category/category';
+import Suppliers from './pages/suppliers/suppliers';
 
 function App() {
   return (
@@ -39,6 +41,19 @@ function App() {
               <Customers />
             </ProtectedRouter>
             } />
+
+<Route path="/supplier" element={
+            <ProtectedRouter>
+              <Suppliers />
+            </ProtectedRouter>
+            } />
+
+            <Route path="/category" element={
+            <ProtectedRouter>
+              <Category />
+            </ProtectedRouter>
+            } />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

@@ -6,10 +6,21 @@ const productSchema = new mongoose.Schema({
       required: [true, 'Product name is required'],
       trim: true
     },
+    productNo: {
+        type: String,
+        required: [true, 'Product name is required'],
+        trim: true
+      },
+
     category: {
       type: String,
       required: [true, 'Category is required']
     },
+    cost: {
+        type: Number,
+        required: [true, 'Cost is required'],
+        min: [0, 'Price cannot be negative']
+      },
     price: {
       type: Number,
       required: [true, 'Price is required'],

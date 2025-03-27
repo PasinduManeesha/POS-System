@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
-import Counter from "./counterModel.js";
+import Counter from "./counterModel.js"; // Import the Counter model
 
 const billSchema = new mongoose.Schema({
   billNumber: {
     type: Number,
     unique: true,
-    index: true
+    index: true,
   },
   customerName: String,
   customerPhone: String,
@@ -16,21 +16,22 @@ const billSchema = new mongoose.Schema({
   cartItems: Array,
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 // Auto-increment hook
-billSchema.pre('save', async function(next) {
+billSchema.pre("save", async function (next) {
   if (!this.isNew) return next();
-  
+
   try {
     const counter = await Counter.findByIdAndUpdate(
-      { _id: 'billNumber' },
+      { _id: "billNumber" },
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
-    
+
+    console.log("Generated billNumber:", counter.seq); // Debugging
     this.billNumber = counter.seq;
     next();
   } catch (err) {

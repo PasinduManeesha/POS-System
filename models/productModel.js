@@ -1,17 +1,54 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-//for create table into db
 const productSchema = new mongoose.Schema({
+    name: {
+      type: String,
+      required: [true, 'Product name is required'],
+      trim: true
+    },
+    productNo: {
+        type: String,
+        required: [true, 'Product name is required'],
+        trim: true
+      },
 
-    name: { type: String, required: true },
-    category: { type: String, required: true },
-    price: { type: Number, required: true },
-    image: { type: String, required: true }
+    category: {
+      type: String,
+      required: [true, 'Category is required']
+    },
+    cost: {
+        type: Number,
+        required: [true, 'Cost is required'],
+        min: [0, 'Price cannot be negative']
+      },
+    price: {
+      type: Number,
+      required: [true, 'Price is required'],
+      min: [0, 'Price cannot be negative']
+    },
+    image: {
+      type: String,
+      default: 'no-image.jpg'
+    },
+    stockQuantity: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: [0, 'Stock cannot be negative']
+    }
+  }, 
+  {
+    timestamps: true // This auto-creates createdAt/updatedAt
+  });
+// Stock adjustment method
+productSchema.methods.adjustStock = async function(adjustment) {
+    this.stockQuantity += adjustment;
+    
+    // Prevent negative stock
+    if (this.stockQuantity < 0) this.stockQuantity = 0;
+    
+    return await this.save();
+};
 
-}, {
-    //for date
-    timestamps: true
-});
-
-const Product = mongoose.model("Product", productSchema);
+const Product = mongoose.model('Product', productSchema);
 export default Product;

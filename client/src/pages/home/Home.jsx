@@ -227,7 +227,7 @@ const POSBilling = () => {
       }
   
       const subTotal = calculateTotal();
-      const tax = Number(((subTotal / 100) * 10).toFixed(2)); // Assuming 10% tax
+      const tax = Number(((subTotal / 100) * 0).toFixed(2)); // Assuming 10% tax
       const totalAmount = Number((Number(subTotal) + tax).toFixed(2));
       
 

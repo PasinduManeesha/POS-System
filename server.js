@@ -11,7 +11,7 @@ import customerRouter from './routes/customerRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import supplierRoutes from './routes/supplierRoutes.js';
 import Counter from './models/counterModel.js';
-
+import inventoryRouter from './routes/inventoryRoutes.js';
 dotenv.config();
 
 // Database connection
@@ -56,6 +56,7 @@ const routes = [
   { path: '/api/customers', router: customerRouter },
   { path: '/api/categories', router: categoryRoutes },
   { path: '/api/suppliers', router: supplierRoutes },
+  { path: '/api/inventory',router: inventoryRouter}
 ];
 
 // Register routes

@@ -62,14 +62,18 @@ const Products = () => {
 
   const columns = [
     {
+      title: "Product No",
+      dataIndex: "productNo"
+  }, 
+    {
         title: "Name",
         dataIndex: "name"
     },
     {
-        title: "Image",
-        dataIndex: "image",
-        render:(image, record) => <img src={image} alt={record.name} height={60} width={60} />
-    }, 
+      title: "Cost",
+      dataIndex: "cost"
+  },
+   
     {
         title: "Price",
         dataIndex: "price",
@@ -127,10 +131,25 @@ const Products = () => {
       
       {
         popModal && 
-        <Modal title={`${editProduct !== null ? "Edit Product" : "Add New Product"}`} visible={popModal} onCancel={() => {setEditProduct(null); setPopModal(false);}} footer={false}>
-          <Form layout='vertical' initialValues={editProduct} onFinish={handlerSubmit}>
+        <Modal
+          title={`${editProduct !== null ? "Edit Product" : "Add New Product"}`}
+          visible={popModal}
+          onCancel={() => {
+            setEditProduct(null);
+            setPopModal(false);
+          }}
+          footer={false}
+        >
+          <Form
+            layout="vertical"
+            initialValues={editProduct}
+            onFinish={handlerSubmit}
+          >
             <FormItem name="name" label="Name">
-              <Input/>
+              <Input />
+            </FormItem>
+            <FormItem name="productNo" label="Product Number">
+              <Input />
             </FormItem>
             <Form.Item name="category" label="Category">
               <Select>
@@ -140,13 +159,20 @@ const Products = () => {
               </Select>
             </Form.Item>
             <FormItem name="price" label="Price">
-              <Input/>
+              <Input />
             </FormItem>
+
+            <FormItem name="cost" label="Cost">
+              <Input />
+            </FormItem>
+
             <FormItem name="image" label="Image URL">
-              <Input/>
+              <Input />
             </FormItem>
             <div className="form-btn-add">
-              <Button htmlType='submit' className='add-new'>Add</Button>
+              <Button htmlType="submit" className="add-new">
+                {editProduct !== null ? "Update" : "Add"}
+              </Button>
             </div>
           </Form>
         </Modal>

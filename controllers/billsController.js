@@ -3,30 +3,35 @@ import Bills from "../models/billsModel.js";
 // Add new bill
 export const addBillsController = async (req, res) => {
   try {
-    const newBill = new Bills(req.body);
-    const savedBill = await newBill.save();
-    
-    res.status(201).json({
-      success: true,
-      message: "Bill created successfully",
-      billNumber: savedBill.billNumber,
-      data: savedBill
+    console.log("Request body:", req.body); // Debugging
+
+    const {
+      customerName,
+      customerPhone,
+      customerAddress,
+      subTotal,
+      tax,
+      totalAmount,
+      cartItems,
+      createdAt,
+    } = req.body;
+
+    const newBill = new Bills({
+      customerName,
+      customerPhone,
+      customerAddress,
+      subTotal,
+      tax,
+      totalAmount,
+      cartItems,
+      createdAt,
     });
-    
+
+    await newBill.save();
+    res.status(201).json({ message: "Bill added successfully!" });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Duplicate bill number detected",
-        error: error.message
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: "Error creating bill",
-      error: error.message
-    });
+    console.error("Error adding bill:", error); // Log the error for debugging
+    res.status(400).json({ message: "Error adding bill", error });
   }
 };
 

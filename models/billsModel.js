@@ -13,14 +13,22 @@ const billSchema = new mongoose.Schema({
   subTotal: Number,
   tax: Number,
   totalAmount: Number,
-  cartItems: Array,
+  totalCost: Number, 
+  cartItems: [{
+    productNo: String,
+    itemDescription: String,
+    unitPrice: Number,
+    quantity: Number,
+    cost: Number, 
+    totalItemCost: Number 
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-// Auto-increment hook
+// Auto-increment hook (unchanged)
 billSchema.pre("save", async function (next) {
   if (!this.isNew) return next();
 

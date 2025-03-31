@@ -48,7 +48,7 @@ export const searchProductByName = async (req, res) => {
     try {
         const { name } = req.query;
         const products = await Product.find({
-            productName: { $regex: name, $options: 'i' } // Case-insensitive search
+            productName: { $regex: name, $options: 'i' } 
         }).select('productName subNumber unitPrice');
 
         res.status(200).json(products);
@@ -69,5 +69,31 @@ export const searchProductBySubNumber = async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+export const updateQuantitiesController = async (req, res) => {
+    try {
+        const { updates } = req.body;
+        
+        if (!updates || !Array.isArray(updates)) {
+            return res.status(400).json({ error: 'Invalid updates format' });
+        }
+
+        const updatePromises = updates.map(async (update) => {
+            const product = await Product.findOne({ productNo: update.productNo });
+            if (product) {
+                product.quantityInStock = Math.max(0, product.quantityInStock - update.quantity);
+                await product.save();
+                return product;
+            }
+            return null;
+        });
+
+        await Promise.all(updatePromises);
+        res.status(200).json({ message: 'Product quantities updated successfully' });
+    } catch (error) {
+        console.error('Error updating quantities:', error);
+        res.status(500).json({ error: error.message });
     }
 };

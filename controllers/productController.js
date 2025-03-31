@@ -48,7 +48,7 @@ export const searchProductByName = async (req, res) => {
     try {
         const { name } = req.query;
         const products = await Product.find({
-            productName: { $regex: name, $options: 'i' } // Case-insensitive search
+            productName: { $regex: name, $options: 'i' } 
         }).select('productName subNumber unitPrice');
 
         res.status(200).json(products);

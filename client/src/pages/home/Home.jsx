@@ -4,7 +4,7 @@ import LayoutApp from '../../components/Layout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./home.css";
 import axios from "axios";
-import { message } from "antd"; // Import message from Ant Design
+import { message } from "antd";
 
 const POSBilling = () => {
   // State variables
@@ -17,7 +17,7 @@ const POSBilling = () => {
     itemDescription: "",
     unitPrice: "",
     quantity: "",
-    cost: "",
+    cost: "", 
   });
   const [editingIndex, setEditingIndex] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
@@ -52,8 +52,6 @@ const POSBilling = () => {
         const productsRes = await axios.get("https://senuri-auto-server.onrender.com/api/products/getproducts");
         setCustomers(customersRes.data);
         setAllProducts(productsRes.data);
-        console.log(customersRes.data);
-        console.log(productsRes.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -100,7 +98,7 @@ const POSBilling = () => {
   // Product handling functions
   const filterProducts = (input) => {
     if (input.trim() === "") {
-      setFilteredProducts([]); // Clear suggestions if input is empty
+      setFilteredProducts([]);
       setShowProductDropdown(false);
       return;
     }
@@ -109,16 +107,14 @@ const POSBilling = () => {
       const filtered = allProducts.filter(product =>
          product.productNo.startsWith(input)
       );
-      console.log("Filtered by product number:", filtered);
       setFilteredProducts(filtered);
     } else {
       const filtered = allProducts.filter(product =>
          product.name.toLowerCase().includes(input.toLowerCase())
       );
-      console.log("Filtered by product name:", filtered);
       setFilteredProducts(filtered);
     }
-    setShowProductDropdown(true); // Ensure the dropdown is shown
+    setShowProductDropdown(true);
   };
 
   const handleProductNumberChange = (e) => {
@@ -132,24 +128,22 @@ const POSBilling = () => {
     const value = e.target.value;
     setNewProduct(prev => ({ ...prev, itemDescription: value }));
     setIsTypingProductNumber(false);
-    filterProducts(value); // Call filterProducts with the input value
+    filterProducts(value);
   };
 
-  // Update the selectProduct function to match your backend fields
   const selectProduct = (product) => {
     setNewProduct({
-      productNo: product.productNo,       // Match your backend field
-      itemDescription: product.name,      // Match your backend field
-      unitPrice: product.price,           // Match your backend field
-      quantity: 1
+      productNo: product.productNo,
+      itemDescription: product.name,
+      unitPrice: product.price,
+      quantity: 1,
+      cost: product.cost // Set the cost from the product data
     });
     setShowProductDropdown(false);
   };
 
   // Product management functions
   const addProduct = () => {
-    console.log("New Product:", newProduct);
-
     if (
       !newProduct.productNo ||
       !newProduct.itemDescription ||
@@ -160,13 +154,19 @@ const POSBilling = () => {
       return;
     }
 
+    // Calculate total cost for this product
+    const productWithCost = {
+      ...newProduct,
+      totalCost: newProduct.cost * newProduct.quantity
+    };
+
     if (editingIndex !== null) {
       const updatedProducts = [...selectedProducts];
-      updatedProducts[editingIndex] = newProduct;
+      updatedProducts[editingIndex] = productWithCost;
       setSelectedProducts(updatedProducts);
       setEditingIndex(null);
     } else {
-      setSelectedProducts([...selectedProducts, newProduct]);
+      setSelectedProducts([...selectedProducts, productWithCost]);
     }
 
     setNewProduct({
@@ -174,6 +174,7 @@ const POSBilling = () => {
       itemDescription: "",
       unitPrice: "",
       quantity: "",
+      cost: ""
     });
   };
 
@@ -184,7 +185,13 @@ const POSBilling = () => {
 
   const editProduct = (index) => {
     const productToEdit = selectedProducts[index];
-    setNewProduct(productToEdit);
+    setNewProduct({
+      productNo: productToEdit.productNo,
+      itemDescription: productToEdit.itemDescription,
+      unitPrice: productToEdit.unitPrice,
+      quantity: productToEdit.quantity,
+      cost: productToEdit.cost
+    });
     setEditingIndex(index);
   };
 
@@ -195,12 +202,11 @@ const POSBilling = () => {
       .toFixed(2);
   };
 
-   // Calculation  functions
-  //  const calculateTotalCost = () => {
-  //   return selectedProducts
-  //     .reduce((totalCost, product) => totalCost + product.cost * product.quantity, 0)
-  //     .toFixed(2);
-  // };
+  const calculateTotalCost = () => {
+    return selectedProducts
+      .reduce((total, product) => total + (product.cost * product.quantity), 0)
+      .toFixed(2);
+  };
 
   const remainingAmount = () => {
     return (amountPaid - calculateTotal()).toFixed(2);
@@ -227,25 +233,36 @@ const POSBilling = () => {
       }
   
       const subTotal = calculateTotal();
-      const tax = Number(((subTotal / 100) * 0).toFixed(2)); // Assuming 10% tax
+      const tax = Number(((subTotal / 100) * 0).toFixed(2)); // Assuming 0% tax (adjust as needed)
       const totalAmount = Number((Number(subTotal) + tax).toFixed(2));
-      
-
-      const newObject = {
+      const totalCost = calculateTotalCost();
+  
+      // Calculate profit
+      const profit = totalAmount - totalCost;
+  
+      const billData = {
         customerName,
         customerPhone: customerNumber,
         customerAddress: "N/A",
         subTotal,
         tax,
         totalAmount,
-        // totleCost,
-        cartItems: selectedProducts,
+        totalCost,
+        profit, // Include profit in the bill data
+        cartItems: selectedProducts.map(item => ({
+          productNo: item.productNo,
+          itemDescription: item.itemDescription,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
+          cost: item.cost,
+          totalItemCost: item.cost * item.quantity
+        })),
         createdAt: new Date(),
       };
   
-      console.log("Data being sent to the backend:", newObject);
+      console.log("Data being sent to the backend:", billData);
   
-      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", newObject);
+      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", billData);
       message.success("Bill Generated!");
   
       // Print the bill after it is successfully saved
@@ -255,6 +272,9 @@ const POSBilling = () => {
       console.error("Error response from backend:", error.response?.data || error.message);
     }
   };
+  
+
+
 
   return (
     <LayoutApp>
@@ -327,10 +347,7 @@ const POSBilling = () => {
               <input
                 type="number"
                 value={newProduct.productNo}
-                onChange={(e) => setNewProduct(prev => ({
-                  ...prev,
-                  productNo: Number(e.target.value)
-                }))}
+                onChange={handleProductNumberChange}
                 className="mt-1 block w-full border p-2"
               />
               {showProductDropdown && isTypingProductNumber && (
@@ -547,7 +564,6 @@ const POSBilling = () => {
           </div>
         </div>
       </div>
-      {console.log("Selected Products:", selectedProducts)}
     </LayoutApp>
   );
 };

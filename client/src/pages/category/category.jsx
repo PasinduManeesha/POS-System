@@ -17,7 +17,7 @@ const Category = () => {
   const getAllCategory = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('/api/categories/');
+      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/categories/');
       setCategoryData(data);
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
@@ -35,7 +35,7 @@ const Category = () => {
   const handlerDelete = async (record) => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      await axios.delete(`/api/categories//${record._id}`);
+      await axios.delete(`https://senuri-auto-server.onrender.com/api/categories//${record._id}`);
       message.success('Category deleted successfully!');
       getAllCategory();
     } catch (error) {
@@ -51,10 +51,10 @@ const Category = () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
       if (editCategory) {
-        await axios.put(`/api/categories/${editCategory._id}`, values);
+        await axios.put(`https://senuri-auto-server.onrender.com/api/categories/${editCategory._id}`, values);
         message.success('Category updated successfully!');
       } else {
-        await axios.post('/api/categories/', values);
+        await axios.post('https://senuri-auto-server.onrender.com/api/categories/', values);
         message.success('Category added successfully!');
       }
       setPopModal(false);

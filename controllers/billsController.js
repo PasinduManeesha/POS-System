@@ -1,9 +1,9 @@
 import Bills from "../models/billsModel.js";
 
-// Add new bill
+
 export const addBillsController = async (req, res) => {
   try {
-    console.log("Request body:", req.body); // Debugging
+    console.log("Request body:", req.body);
 
     const {
       customerName,
@@ -12,9 +12,13 @@ export const addBillsController = async (req, res) => {
       subTotal,
       tax,
       totalAmount,
+      totalCost, 
       cartItems,
       createdAt,
     } = req.body;
+
+    // Calculate Profit
+    const profit = totalAmount - totalCost;
 
     const newBill = new Bills({
       customerName,
@@ -23,6 +27,8 @@ export const addBillsController = async (req, res) => {
       subTotal,
       tax,
       totalAmount,
+      totalCost, 
+      profit, 
       cartItems,
       createdAt,
     });
@@ -30,10 +36,12 @@ export const addBillsController = async (req, res) => {
     await newBill.save();
     res.status(201).json({ message: "Bill added successfully!" });
   } catch (error) {
-    console.error("Error adding bill:", error); // Log the error for debugging
+    console.error("Error adding bill:", error);
     res.status(400).json({ message: "Error adding bill", error });
   }
 };
+
+
 
 // Get all bills
 export const getBillsController = async (req, res) => {

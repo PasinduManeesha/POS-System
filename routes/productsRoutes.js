@@ -5,8 +5,10 @@ import {
     updateProductController, 
     deleteProductController,
     searchProductByName,
-    searchProductBySubNumber
+    searchProductBySubNumber,
+    updateQuantitiesController  
 } from "../controllers/productController.js";
+
 
 const productRouter = express.Router();
 
@@ -19,5 +21,6 @@ productRouter.post("/deleteproducts", deleteProductController);
 // Search routes
 productRouter.get('/search-by-name', searchProductByName);
 productRouter.get('/search-by-subnumber', searchProductBySubNumber);
+productRouter.post('/updateQuantities', updateQuantitiesController);
 
 export default productRouter;

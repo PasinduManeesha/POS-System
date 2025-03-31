@@ -17,7 +17,7 @@ const Suppliers = () => {
   const getAllSuppliers = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('/api/suppliers/getsuppliers');
+      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/suppliers/getsuppliers');
       setSupplierData(data);
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
@@ -36,7 +36,7 @@ const Suppliers = () => {
   const handlerDelete = async (record) => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      await axios.delete(`/api/suppliers/deletesupplier/${record._id}`);
+      await axios.delete(`https://senuri-auto-server.onrender.com/api/suppliers/deletesupplier/${record._id}`);
       message.success('Supplier Deleted Successfully!');
       getAllSuppliers(); // Refresh the supplier list
     } catch (error) {
@@ -53,11 +53,11 @@ const Suppliers = () => {
       dispatch({ type: 'SHOW_LOADING' });
       if (editSupplier) {
         // Update existing supplier
-        await axios.put(`/api/suppliers/updatesupplier/${editSupplier._id}`, values);
+        await axios.put(`https://senuri-auto-server.onrender.com/api/suppliers/updatesupplier/${editSupplier._id}`, values);
         message.success('Supplier Updated Successfully!');
       } else {
         // Add new supplier
-        await axios.post('/api/suppliers/addsupplier', values);
+        await axios.post('https://senuri-auto-server.onrender.com/api/suppliers/addsupplier', values);
         message.success('Supplier Added Successfully!');
       }
       setPopModal(false); // Close the modal

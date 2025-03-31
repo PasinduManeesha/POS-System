@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Layout, Menu } from 'antd';
 import {
-  // MenuUnfoldOutlined,
-  // MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
   HomeOutlined,
   UserSwitchOutlined,
   MoneyCollectOutlined,
@@ -10,14 +10,14 @@ import {
   DatabaseOutlined,
   UserDeleteOutlined,
   CarOutlined,
-  //ShoppingCartOutlined
+  ShoppingCartOutlined
 } from '@ant-design/icons';
 import './layout.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Spinner from './Spinner';
 
-const { Sider, Content } = Layout;
+const { Header, Sider, Content } = Layout;
 
 const LayoutApp = ({ children }) => {
   const { cartItems, loading } = useSelector(state => state.rootReducer);
@@ -25,9 +25,9 @@ const LayoutApp = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
 
-  // const toggle = () => {
-  //   setCollapsed(!collapsed);
-  // };
+  const toggle = () => {
+    setCollapsed(!collapsed);
+  };
 
   useEffect(() => {
     localStorage.setItem('cartItems', JSON.stringify(cartItems))

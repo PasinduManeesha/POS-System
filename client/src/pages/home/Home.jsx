@@ -17,7 +17,7 @@ const POSBilling = () => {
     itemDescription: "",
     unitPrice: "",
     quantity: "",
-    cost: "", // Hidden from user but used in calculations
+    cost: "", 
   });
   const [editingIndex, setEditingIndex] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
@@ -236,7 +236,10 @@ const POSBilling = () => {
       const tax = Number(((subTotal / 100) * 0).toFixed(2)); // Assuming 0% tax (adjust as needed)
       const totalAmount = Number((Number(subTotal) + tax).toFixed(2));
       const totalCost = calculateTotalCost();
-
+  
+      // Calculate profit
+      const profit = totalAmount - totalCost;
+  
       const billData = {
         customerName,
         customerPhone: customerNumber,
@@ -244,14 +247,15 @@ const POSBilling = () => {
         subTotal,
         tax,
         totalAmount,
-        totalCost, 
+        totalCost,
+        profit, // Include profit in the bill data
         cartItems: selectedProducts.map(item => ({
           productNo: item.productNo,
           itemDescription: item.itemDescription,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
-          cost: item.cost, 
-          totalCost: item.cost * item.quantity
+          cost: item.cost,
+          totalItemCost: item.cost * item.quantity
         })),
         createdAt: new Date(),
       };
@@ -268,6 +272,7 @@ const POSBilling = () => {
       console.error("Error response from backend:", error.response?.data || error.message);
     }
   };
+  
 
 
 

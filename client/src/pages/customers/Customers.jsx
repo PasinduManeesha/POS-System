@@ -17,7 +17,7 @@ const Customers = () => {
   const getAllCustomers = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('/api/customers/getcustomers');
+      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/customers/getcustomers');
       setCustomerData(data);
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
@@ -37,7 +37,7 @@ const Customers = () => {
     try {
         dispatch({ type: 'SHOW_LOADING' });
 
-        await axios.delete(`/api/customers/deletecustomer/${record._id}`);
+        await axios.delete(`https://senuri-auto-server.onrender.com/api/customers/deletecustomer/${record._id}`);
 
         message.success('Customer Deleted Successfully!');
         getAllCustomers(); // Refresh the customer list
@@ -56,11 +56,11 @@ const Customers = () => {
       dispatch({ type: 'SHOW_LOADING' });
       if (editCustomer) {
         // Update existing customer
-        await axios.put(`/api/customers/updatecustomer/${editCustomer._id}`, values);
+        await axios.put(`https://senuri-auto-server.onrender.com/api/customers/updatecustomer/${editCustomer._id}`, values);
         message.success('Customer Updated Successfully!');
       } else {
         // Add new customer
-        await axios.post('/api/customers/addcustomer', values);
+        await axios.post('https://senuri-auto-server.onrender.com/api/customers/addcustomer', values);
         message.success('Customer Added Successfully!');
       }
       setPopModal(false); // Close the modal

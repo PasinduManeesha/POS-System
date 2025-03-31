@@ -48,8 +48,8 @@ const POSBilling = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const customersRes = await axios.get("/api/customers/getcustomers");
-        const productsRes = await axios.get("/api/products/getproducts");
+        const customersRes = await axios.get("https://senuri-auto-server.onrender.com/api/customers/getcustomers");
+        const productsRes = await axios.get("https://senuri-auto-server.onrender.com/api/products/getproducts");
         setCustomers(customersRes.data);
         setAllProducts(productsRes.data);
       } catch (error) {
@@ -258,10 +258,10 @@ const POSBilling = () => {
   
       console.log("Data being sent to the backend:", billData);
   
-      // First save the bill
-      await axios.post("/api/bills/addbills", billData);
-      
-      message.success("Bill Generated and Products Updated!");
+      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", billData);
+      message.success("Bill Generated!");
+  
+      // Print the bill after it is successfully saved
       handlePrint();
     } catch (error) {
       message.error("Error generating bill!");

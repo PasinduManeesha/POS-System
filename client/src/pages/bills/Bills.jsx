@@ -16,7 +16,7 @@ const Bills = () => {
     const getAllBills = async () => {
       try {
         dispatch({ type: "SHOW_LOADING" });
-        const { data } = await axios.get('/api/bills/getbills');
+        const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/bills/getbills');
         
         // Correct response structure handling
         setBillsData(data.data || []);

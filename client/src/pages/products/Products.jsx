@@ -18,7 +18,7 @@ const Products = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      const {data} = await axios.get('/api/products/getproducts');
+      const {data} = await axios.get('https://senuri-auto-server.onrender.com/api/products/getproducts');
       setProductData(data);
       dispatch({
         type: "HIDE_LOADING",
@@ -42,7 +42,7 @@ const Products = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      await axios.post('/api/products/deleteproducts', {productId:record._id});
+      await axios.post('https://senuri-auto-server.onrender.com/api/products/deleteproducts', {productId:record._id});
       message.success("Product Deleted Successfully!")
       getAllProducts();
       setPopModal(false);
@@ -100,10 +100,10 @@ const Products = () => {
       dispatch({ type: "SHOW_LOADING" });
   
       if (isAddingNew) {
-        const res = await axios.post('/api/products/addproducts', value);
+        const res = await axios.post('https://senuri-auto-server.onrender.com/api/products/addproducts', value);
         message.success("Product Added Successfully!");
       } else {
-        await axios.put('/api/products/updateproducts', { ...value, productId: editProduct._id });
+        await axios.put('https://senuri-auto-server.onrender.com/api/products/updateproducts', { ...value, productId: editProduct._id });
         message.success("Product Updated Successfully!");
       }
   

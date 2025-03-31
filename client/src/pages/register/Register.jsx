@@ -15,7 +15,7 @@ const Register = () => {
       dispatch({
         type: "SHOW_LOADING",
       });
-      await axios.post('/api/users/register', value);
+      await axios.post('https://senuri-auto-server.onrender.com/api/users/register', value);
       message.success("Register Successfully!");
       navigate("/login");
       dispatch({

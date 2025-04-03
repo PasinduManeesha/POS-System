@@ -8,6 +8,10 @@ const billSchema = new mongoose.Schema({
     unique: true,
     index: true,
   },
+  invoiceNumber: {
+    type: String,
+    required: true,
+  },
   customerName: String,
   customerPhone: String,
   customerAddress: String,

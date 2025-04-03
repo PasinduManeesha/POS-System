@@ -15,12 +15,14 @@ export const addBillsController = async (req, res) => {
       totalCost, 
       cartItems,
       createdAt,
+      invoiceNumber,
     } = req.body;
 
     // Calculate Profit
     const profit = totalAmount - totalCost;
 
     const newBill = new Bills({
+      invoiceNumber,
       customerName,
       customerPhone,
       customerAddress,

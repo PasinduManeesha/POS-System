@@ -241,7 +241,7 @@ const POSBilling = () => {
       const profit = totalAmount - totalCost;
   
       const billData = {
-        billNumber: invoiceNumber,
+        invoiceNumber,
         customerName,
         customerPhone: customerNumber,
         customerAddress: "N/A",

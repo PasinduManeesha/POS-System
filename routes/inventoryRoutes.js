@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import Product from '../models/productModel.js'; // Corrected path
+import Product from '../models/productModel.js';
 
 router.post('/adjust-stock', async (req, res) => {
     try {

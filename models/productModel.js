@@ -2,44 +2,43 @@ import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
     name: {
-      type: String,
-      required: [true, 'Product name is required'],
-      trim: true
-    },
-    productNo: {
         type: String,
         required: [true, 'Product name is required'],
         trim: true
-      },
-
+    },
+    productNo: {
+        type: String,
+        required: [true, 'Product number is required'],
+        trim: true
+    },
     category: {
-      type: String,
-      required: [true, 'Category is required']
+        type: String,
+        required: [true, 'Category is required']
     },
     cost: {
         type: Number,
         required: [true, 'Cost is required'],
-        min: [0, 'Price cannot be negative']
-      },
+        min: [0, 'Cost cannot be negative']
+    },
     price: {
-      type: Number,
-      required: [true, 'Price is required'],
-      min: [0, 'Price cannot be negative']
+        type: Number,
+        required: [true, 'Price is required'],
+        min: [0, 'Price cannot be negative']
     },
     image: {
-      type: String,
-      default: 'no-image.jpg'
+        type: String,
+        default: 'no-image.jpg'
     },
     stockQuantity: {
-      type: Number,
-      required: true,
-      default: 0,
-      min: [0, 'Stock cannot be negative']
+        type: Number,
+        required: true,
+        default: 0,
+        min: [0, 'Stock cannot be negative']
     }
-  }, 
-  {
-    timestamps: true // This auto-creates createdAt/updatedAt
-  });
+}, {
+    timestamps: true // Auto-creates createdAt/updatedAt
+});
+
 // Stock adjustment method
 productSchema.methods.adjustStock = async function(adjustment) {
     this.stockQuantity += adjustment;

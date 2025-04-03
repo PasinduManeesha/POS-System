@@ -33,22 +33,25 @@ const billSchema = new mongoose.Schema({
 
 
 billSchema.pre("save", async function (next) {
-  if (!this.isNew) return next();
+  if (!this.isNew) return next(); 
 
   try {
-    const counter = await Counter.findByIdAndUpdate(
-      { _id: "billNumber" },
-      { new: true, upsert: true }
-    );
+    
+    const lastBill = await Bills.findOne().sort({ billNumber: -1 });
 
-    console.log("Generated billNumber:", counter.seq); 
-    this.billNumber = counter.seq;
+    if (lastBill) {
+      this.billNumber = lastBill.billNumber + 1; 
+    } else {
+      this.billNumber = 1; 
+    }
+
+    console.log("Generated Bill Number:", this.billNumber);
     next();
   } catch (err) {
+    console.error("Error generating bill number:", err);
     next(err);
   }
 });
-
 
 
 const Bills = mongoose.model("Bills", billSchema);

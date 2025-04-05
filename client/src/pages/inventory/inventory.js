@@ -10,8 +10,8 @@ const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
   const [popModal, setPopModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [form] = Form.useForm();
 
-  // Fetch inventory
   const getAllInventory = async () => {
     try {
       dispatch({ type: "SHOW_LOADING" });
@@ -26,63 +26,79 @@ const Inventory = () => {
 
   useEffect(() => {
     getAllInventory();
-
-    // Listen for stock updates (polling every 5 seconds)
     const interval = setInterval(() => {
       getAllInventory();
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
-  // Handle stock adjustment
+  const openModal = (product) => {
+    setSelectedProduct(product);
+    setPopModal(true);
+    setTimeout(() => {
+      form.setFieldsValue({
+        currentStock: product.stockQuantity,
+        adjustment: 0,
+        addedCost: 0,
+      });
+    }, 100);
+  };
+
   const handleAdjustStock = async (values) => {
     try {
       dispatch({ type: "SHOW_LOADING" });
 
-      // Ensure the stock adjustment is valid
-      const adjustmentAmount = values.adjustment;
-      if (adjustmentAmount === 0) {
+      const adjustment = Number(values.adjustment);
+      const addedCost = Number(values.addedCost);
+      const preCost = Number(selectedProduct.cost);
+      const preQty = Number(selectedProduct.stockQuantity);
+
+      if (adjustment === 0) {
         message.error("Adjustment amount cannot be zero");
         return;
       }
 
-      if (selectedProduct.stockQuantity + adjustmentAmount < 0) {
+      if (preQty + adjustment < 0) {
         message.error("Stock cannot go below zero.");
         return;
       }
 
+      let finalCost = preCost;
+
+      if (adjustment > 0 && addedCost >= 0) {
+        finalCost = ((preCost * preQty) + (addedCost * adjustment)) / (preQty + adjustment);
+        finalCost = parseFloat(finalCost.toFixed(2));
+      }
+
+      // ✅ Send updated cost to backend
       await axios.post('/api/inventory/adjust-stock', {
         productId: selectedProduct._id,
-        adjustment: adjustmentAmount
+        adjustment: adjustment,
+        cost: finalCost,
       });
 
-      message.success("Stock adjusted successfully!");
-      getAllInventory(); // Refresh inventory list after update
-      setPopModal(false); // Close the modal
+      message.success("Stock and cost updated successfully!");
+      getAllInventory();
+      setPopModal(false);
+      setSelectedProduct(null);
+      form.resetFields();
     } catch (error) {
-      // Handle any error that may occur during the API call
       message.error(error.response?.data?.message || error.message);
     } finally {
       dispatch({ type: "HIDE_LOADING" });
     }
   };
 
-  // Columns for the inventory table
   const columns = [
     { title: "Product Name", dataIndex: "name" },
     { title: "Category", dataIndex: "category" },
+    { title: "Cost", dataIndex: "cost" },
     { title: "Current Stock", dataIndex: "stockQuantity" },
     {
       title: "Action",
       dataIndex: "_id",
       render: (id, record) => (
-        <EditOutlined
-          onClick={() => {
-            setSelectedProduct(record); // Set selected product
-            setPopModal(true); // Show the modal
-          }}
-        />
+        <EditOutlined onClick={() => openModal(record)} />
       ),
     },
   ];
@@ -92,25 +108,19 @@ const Inventory = () => {
       <h2>Inventory Management</h2>
       <Table dataSource={inventoryData} columns={columns} bordered rowKey="_id" />
 
-      {/* Modal for adjusting stock */}
       <Modal
         title={`Adjust Stock - ${selectedProduct?.name}`}
         visible={popModal}
         onCancel={() => {
-          setSelectedProduct(null); // Reset selected product
-          setPopModal(false); // Close the modal
+          setPopModal(false);
+          setSelectedProduct(null);
+          form.resetFields();
         }}
         footer={null}
+        destroyOnClose
       >
-        <Form
-          layout="vertical"
-          initialValues={{
-            currentStock: selectedProduct?.stockQuantity || 0,
-            adjustment: 0,
-          }}
-          onFinish={handleAdjustStock}
-        >
-          <Form.Item label="Current Stock" name="currentStock">
+        <Form form={form} layout="vertical" onFinish={handleAdjustStock}>
+          <Form.Item label="Current Stock">
             <Input disabled value={selectedProduct?.stockQuantity} />
           </Form.Item>
 
@@ -119,10 +129,15 @@ const Inventory = () => {
             name="adjustment"
             rules={[{ required: true, message: 'Please enter adjustment amount' }]}
           >
-            <Input
-              type="number"
-              placeholder="Positive to add, negative to deduct"
-            />
+            <Input type="number" placeholder="Positive to add, negative to deduct" />
+          </Form.Item>
+
+          <Form.Item
+            label="Cost for Added Stock"
+            name="addedCost"
+            rules={[{ required: true, message: 'Please enter cost' }]}
+          >
+            <Input type="number" step="0.01" placeholder="Only used when adding stock" />
           </Form.Item>
 
           <Form.Item>

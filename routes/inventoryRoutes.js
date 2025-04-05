@@ -4,35 +4,33 @@ import Product from '../models/productModel.js';
 
 router.post('/adjust-stock', async (req, res) => {
     try {
-        const { productId, adjustment } = req.body;
-        
-        // Validate input
-        if (!productId || adjustment === undefined) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Product ID and adjustment amount are required'
-            });
-        }
+        const { productId, adjustment, cost } = req.body;
 
-        // Convert to number
-        const numericAdjustment = Number(adjustment);
-        if (isNaN(numericAdjustment)) {
+        if (!productId || adjustment === undefined || cost === undefined) {
             return res.status(400).json({
                 success: false,
-                message: 'Adjustment must be a numeric value'
+                message: 'Product ID, adjustment amount, and cost are required'
             });
         }
 
-        // Find product
+        const numericAdjustment = Number(adjustment);
+        const newCost = Number(cost);
+
+        if (isNaN(numericAdjustment) || isNaN(newCost)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Adjustment and cost must be numeric values'
+            });
+        }
+
         const product = await Product.findById(productId);
         if (!product) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
                 message: 'Product not found'
             });
         }
 
-        // Validate stock
         if ((product.stockQuantity + numericAdjustment) < 0) {
             return res.status(400).json({
                 success: false,
@@ -40,12 +38,14 @@ router.post('/adjust-stock', async (req, res) => {
             });
         }
 
-        // Update stock
-        const updatedProduct = await product.adjustStock(numericAdjustment);
-        
+        product.stockQuantity += numericAdjustment;
+        product.cost = newCost;
+
+        const updatedProduct = await product.save();
+
         res.status(200).json({
             success: true,
-            message: 'Stock adjusted successfully',
+            message: 'Stock and cost adjusted successfully',
             product: updatedProduct
         });
 
@@ -57,5 +57,6 @@ router.post('/adjust-stock', async (req, res) => {
         });
     }
 });
+
 
 export default router;

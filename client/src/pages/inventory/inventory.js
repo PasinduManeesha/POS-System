@@ -15,7 +15,7 @@ const Inventory = () => {
   const getAllInventory = async () => {
     try {
       dispatch({ type: "SHOW_LOADING" });
-      const { data } = await axios.get('/api/products/getproducts');
+      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/products/getproducts');
       setInventoryData(data);
       dispatch({ type: "HIDE_LOADING" });
     } catch (error) {
@@ -71,7 +71,7 @@ const Inventory = () => {
       }
 
       // ✅ Send updated cost to backend
-      await axios.post('/api/inventory/adjust-stock', {
+      await axios.post('https://senuri-auto-server.onrender.com/api/inventory/adjust-stock', {
         productId: selectedProduct._id,
         adjustment: adjustment,
         cost: finalCost,

@@ -7,7 +7,7 @@ const counterSchema = new mongoose.Schema({
   },
   seq: {
     type: Number,
-    default: 0,
+    default: 0, // Ensure default is 0 if not provided
   },
 });
 

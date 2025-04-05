@@ -1,5 +1,5 @@
-import Bills from "../models/billsModel.js";
-
+import Bills from "../models/billsModel.js"; // Assuming you have a Bill model
+import Product from '../models/productModel.js'; // Assuming you have a Product model
 
 export const addBillsController = async (req, res) => {
   try {
@@ -15,12 +15,15 @@ export const addBillsController = async (req, res) => {
       totalCost, 
       cartItems,
       createdAt,
+      invoiceNumber,
     } = req.body;
 
     // Calculate Profit
     const profit = totalAmount - totalCost;
 
+    // Create new bill
     const newBill = new Bills({
+      invoiceNumber,
       customerName,
       customerPhone,
       customerAddress,
@@ -33,13 +36,34 @@ export const addBillsController = async (req, res) => {
       createdAt,
     });
 
+    // Process cart items and reduce stock
+    for (let item of cartItems) {
+      const product = await Product.findOne({ productNo: item.productNo });
+
+      if (!product) {
+        return res.status(404).json({ success: false, message: `Product ${item.productNo} not found` });
+      }
+
+      // Ensure the quantity being sold does not exceed available stock
+      if (product.stockQuantity < item.quantity) {
+        return res.status(400).json({ success: false, message: `Not enough stock for product ${item.productNo}` });
+      }
+
+      // Reduce the stock in the inventory
+      await product.adjustStock(-item.quantity);
+    }
+
+    // Save the bill
     await newBill.save();
-    res.status(201).json({ message: "Bill added successfully!" });
+
+    // Send success response
+    res.status(201).json({ success: true, message: "Bill added and stock updated successfully!" });
   } catch (error) {
     console.error("Error adding bill:", error);
-    res.status(400).json({ message: "Error adding bill", error });
+    res.status(400).json({ success: false, message: "Error adding bill", error: error.message });
   }
 };
+
 
 
 

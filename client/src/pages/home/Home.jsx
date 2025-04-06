@@ -263,7 +263,7 @@ const POSBilling = () => {
   
       console.log("Data being sent to the backend:", billData);
   
-      await axios.post("/api/bills/addbills", billData);
+      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", billData);
       message.success("Bill Generated!");
   
       // Print the bill after it is successfully saved

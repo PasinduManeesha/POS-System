@@ -20,18 +20,18 @@ const Bills = () => {
     });
 
     const getAllBills = async () => {
-      try {
-        dispatch({ type: "SHOW_LOADING" });
-        const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/bills/getbills');
-        setBillsData(data.data || []);
-        setFilteredData(data.data || []);
-      } catch(error) {
-        console.error("Error fetching bills:", error);
-        setBillsData([]);
-        setFilteredData([]);
-      } finally {
-        dispatch({ type: "HIDE_LOADING" });
-      }
+        try {
+            dispatch({ type: "SHOW_LOADING" });
+            const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/bills/getbills');
+            setBillsData(data.data || []);
+            setFilteredData(data.data || []);
+        } catch (error) {
+            console.error("Error fetching bills:", error);
+            setBillsData([]);
+            setFilteredData([]);
+        } finally {
+            dispatch({ type: "HIDE_LOADING" });
+        }
     };
 
     useEffect(() => {
@@ -41,11 +41,11 @@ const Bills = () => {
     useEffect(() => {
         // Apply filters whenever searchText changes
         const filtered = billsData.filter(bill => {
-            const matchesInvoice = bill.invoiceNumber?.toString().includes(searchText.invoiceNumber) || 
-                                  `INV-${bill.invoiceNumber?.toString().padStart(5, '0')}`.includes(searchText.invoiceNumber);
+            const matchesInvoice = bill.invoiceNumber?.toString().includes(searchText.invoiceNumber) ||
+                `INV-${bill.invoiceNumber?.toString().padStart(5, '0')}`.includes(searchText.invoiceNumber);
             const matchesName = bill.customerName?.toLowerCase().includes(searchText.customerName.toLowerCase());
             const matchesPhone = bill.customerPhone?.includes(searchText.customerPhone);
-            
+
             return matchesInvoice && matchesName && matchesPhone;
         });
         setFilteredData(filtered);
@@ -95,68 +95,68 @@ const Bills = () => {
     });
 
     const columns = [
-      {
-        title: "Bill No.",
-        dataIndex: "invoiceNumber",
-        render: (number) => number ? `INV-${number.toString().padStart(5, '0')}` : '-'
-      },
-      {
-          title: "Date",
-          dataIndex: "createdAt",
-          render: (date) => date ? new Date(date).toLocaleDateString() : '-'
-      },
-      { 
-          title: "Customer Name", 
-          dataIndex: "customerName",
-          render: (text) => text || 'N/A'
-      },
-      { 
-          title: "Contact Number", 
-          dataIndex: "customerPhone",
-          render: (text) => text || 'N/A'
-      },
-      { 
-          title: "Sub Total", 
-          dataIndex: "subTotal",
-          render: (value) => `Rs ${(value || 0).toFixed(2)}`
-      },
-      { 
-          title: "Profit", 
-          dataIndex: "profit",
-          render: (value) => `Rs ${(value || 0).toFixed(2)}`
-      },
-      { 
-          title: "Total Amount", 
-          dataIndex: "totalAmount",
-          render: (value) => `Rs ${(value || 0).toFixed(2)}`
-      },
-      {
-          title: "Action",
-          dataIndex: "_id",
-          render: (id, record) => (
-              <EyeOutlined 
-                  className='cart-edit eye' 
-                  onClick={() => {
-                      setSelectedBill(record); 
-                      setPopModal(true);
-                  }} 
-              />
-          )
-      }
+        {
+            title: "Bill No.",
+            dataIndex: "invoiceNumber",
+            render: (number) => number ? `INV-${number.toString().padStart(5, '0')}` : '-'
+        },
+        {
+            title: "Date",
+            dataIndex: "createdAt",
+            render: (date) => date ? new Date(date).toLocaleDateString() : '-'
+        },
+        {
+            title: "Customer Name",
+            dataIndex: "customerName",
+            render: (text) => text || 'N/A'
+        },
+        {
+            title: "Contact Number",
+            dataIndex: "customerPhone",
+            render: (text) => text || 'N/A'
+        },
+        {
+            title: "Sub Total",
+            dataIndex: "subTotal",
+            render: (value) => `Rs ${(value || 0).toFixed(2)}`
+        },
+        {
+            title: "Profit",
+            dataIndex: "profit",
+            render: (value) => `Rs ${(value || 0).toFixed(2)}`
+        },
+        {
+            title: "Total Amount",
+            dataIndex: "totalAmount",
+            render: (value) => `Rs ${(value || 0).toFixed(2)}`
+        },
+        {
+            title: "Action",
+            dataIndex: "_id",
+            render: (id, record) => (
+                <EyeOutlined
+                    className='cart-edit eye'
+                    onClick={() => {
+                        setSelectedBill(record);
+                        setPopModal(true);
+                    }}
+                />
+            )
+        }
     ];
 
     return (
         <Layout>
             <h2>All Invoices</h2>
-            
+
             {/* Filter Section */}
-            <Card 
+            <Card
                 title={
                     <span>
                         <FilterOutlined style={{ marginRight: 8 }} />
                         Filter Invoices
                     </span>
-                } 
+                }
                 style={{ marginBottom: 20 }}
                 bordered={false}
             >
@@ -185,7 +185,7 @@ const Bills = () => {
                             />
                         </div>
                     </Col>
-                    <Col xs={24} sm={12} md={8} lg={8}>
+                    <Col xs={24} sm={12} md={8} lg={5}>
                         <div style={{ marginBottom: 16 }}>
                             <label>Contact Number</label>
                             <Input
@@ -197,28 +197,29 @@ const Bills = () => {
                             />
                         </div>
                     </Col>
+                    <Button
+                        type="default"
+                        onClick={handleResetFilters}
+                        style={{ marginTop: 23 }}
+                    >
+                        Reset Filters
+                    </Button>
                 </Row>
-                <Button 
-                    type="default" 
-                    onClick={handleResetFilters}
-                    style={{ marginTop: 8 }}
-                >
-                    Reset Filters
-                </Button>
+
             </Card>
 
             {/* Table Section */}
-            <Table 
+            <Table
                 dataSource={filteredData}
-                columns={columns} 
-                bordered 
+                columns={columns}
+                bordered
                 rowKey="_id"
                 pagination={{ pageSize: 10 }}
                 locale={{
                     emptyText: 'No bills found'
                 }}
             />
-            
+
             <Modal
                 title="Invoice Details"
                 width={800}
@@ -288,8 +289,8 @@ const Bills = () => {
                 </div>
 
                 <div className="no-print" style={{ textAlign: 'center', marginTop: 20 }}>
-                    <Button 
-                        type="primary" 
+                    <Button
+                        type="primary"
                         onClick={handlePrint}
                         style={{ width: 150 }}
                     >

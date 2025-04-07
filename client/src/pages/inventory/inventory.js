@@ -130,7 +130,7 @@ const Inventory = () => {
     {
       title: "Cost",
       dataIndex: "cost",
-      render: cost => `$${parseFloat(cost).toFixed(2)}`
+      render: cost => `Rs ${parseFloat(cost).toFixed(2)}`
     },
     { title: "Current Stock", dataIndex: "stockQuantity" },
     {

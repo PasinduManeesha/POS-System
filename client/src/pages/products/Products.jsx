@@ -124,7 +124,7 @@ const Products = () => {
     { title: 'Product No', dataIndex: 'productNo' },
     { title: 'Name', dataIndex: 'name' },
     { title: 'Category', dataIndex: 'category' },
-    { title: 'Cost', dataIndex: 'cost' },
+    { title: 'Cost', dataIndex: 'cost' , render: cost => `Rs ${parseFloat(cost).toFixed(2)}`},
     { title: 'Price', dataIndex: 'price' },
     {
       title: 'Action',

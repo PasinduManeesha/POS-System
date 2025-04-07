@@ -1,17 +1,25 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Table, message } from 'antd';
-import Layout from '../../components/Layout'; // Adjust the path as per your project structure
+import { DeleteOutlined, EditOutlined, FilterOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Modal, Table, message, Card, Row, Col } from 'antd';
+import Layout from '../../components/Layout';
 
 const Suppliers = () => {
   const dispatch = useDispatch();
 
   // State variables
-  const [supplierData, setSupplierData] = useState([]); // List of suppliers
-  const [popModal, setPopModal] = useState(false); // Modal visibility
-  const [editSupplier, setEditSupplier] = useState(null); // Supplier being edited
+  const [supplierData, setSupplierData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [popModal, setPopModal] = useState(false);
+  const [editSupplier, setEditSupplier] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Filter state
+  const [filter, setFilter] = useState({
+    supplierName: '',
+    supplierPhone: ''
+  });
 
   // Fetch all suppliers from the API
   const getAllSuppliers = async () => {
@@ -19,12 +27,37 @@ const Suppliers = () => {
       dispatch({ type: 'SHOW_LOADING' });
       const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/suppliers/getsuppliers');
       setSupplierData(data);
+      setFilteredData(data);
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
       console.log(error);
       message.error('Failed to fetch suppliers');
     }
+  };
+
+  // Apply filters whenever filter state or supplier data changes
+  useEffect(() => {
+    handleFilter();
+  }, [filter, supplierData]);
+
+  // Filter function
+  const handleFilter = () => {
+    const filtered = supplierData.filter((supplier) => {
+      return (
+        supplier.supplierName.toLowerCase().includes(filter.supplierName.toLowerCase()) &&
+        supplier.supplierPhone.includes(filter.supplierPhone)
+      );
+    });
+    setFilteredData(filtered);
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilter({
+      supplierName: '',
+      supplierPhone: ''
+    });
   };
 
   // Fetch suppliers when the component mounts
@@ -38,7 +71,7 @@ const Suppliers = () => {
       dispatch({ type: 'SHOW_LOADING' });
       await axios.delete(`https://senuri-auto-server.onrender.com/api/suppliers/deletesupplier/${record._id}`);
       message.success('Supplier Deleted Successfully!');
-      getAllSuppliers(); // Refresh the supplier list
+      getAllSuppliers();
     } catch (error) {
       console.error('Error deleting supplier:', error);
       message.error('Failed to delete supplier. Please try again.');
@@ -52,17 +85,15 @@ const Suppliers = () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
       if (editSupplier) {
-        // Update existing supplier
         await axios.put(`https://senuri-auto-server.onrender.com/api/suppliers/updatesupplier/${editSupplier._id}`, values);
         message.success('Supplier Updated Successfully!');
       } else {
-        // Add new supplier
         await axios.post('https://senuri-auto-server.onrender.com/api/suppliers/addsupplier', values);
         message.success('Supplier Added Successfully!');
       }
-      setPopModal(false); // Close the modal
-      setEditSupplier(null); // Clear the edit state
-      getAllSuppliers(); // Refresh the supplier list
+      setPopModal(false);
+      setEditSupplier(null);
+      getAllSuppliers();
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
@@ -109,14 +140,58 @@ const Suppliers = () => {
   return (
     <Layout>
       <h2>All Suppliers</h2>
-      <Button className='add-new' onClick={() => setPopModal(true)}>
+
+      {/* Filter Section */}
+      <Card
+        title={
+          <span>
+            <FilterOutlined style={{ marginRight: 8 }} />
+            Filter Suppliers
+          </span>
+        }
+        style={{ marginBottom: 20 }}
+        bordered={false}
+      >
+        <Row gutter={16} align="middle">
+          <Col xs={24} sm={12} md={10}>
+            <label>Supplier Name</label>
+              <Input
+                placeholder="Filter by name"
+                value={filter.supplierName}
+                onChange={(e) => setFilter({ ...filter, supplierName: e.target.value })}
+              />
+          </Col>
+          <Col xs={24} sm={12} md={10}>
+            <label>Contact Number</label>
+              <Input
+                placeholder="Filter by phone"
+                value={filter.supplierPhone}
+                onChange={(e) => setFilter({ ...filter, supplierPhone: e.target.value })}
+              />
+          </Col>
+          <Col xs={24} sm={24} md={4}>
+            <Button
+              type="default"
+              onClick={handleResetFilters}
+              style={{ marginTop: 20 }}
+              block
+            >
+              Reset Filters
+            </Button>
+          </Col>
+        </Row>
+      </Card>
+
+      <Button className="add-new" onClick={() => setPopModal(true)}>
         Add New Supplier
       </Button>
+
       <Table
-        dataSource={supplierData}
+        dataSource={filteredData}
         columns={columns}
         bordered
         rowKey="_id"
+        loading={loading}
         style={{ marginTop: '20px' }}
       />
 
@@ -129,6 +204,7 @@ const Suppliers = () => {
             setPopModal(false);
           }}
           footer={null}
+          destroyOnClose
         >
           <Form
             layout="vertical"

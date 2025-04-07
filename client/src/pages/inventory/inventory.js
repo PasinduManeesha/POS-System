@@ -2,21 +2,33 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import LayoutApp from '../../components/Layout';
-import { EditOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, Table, message } from 'antd';
+import { EditOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { Button, Card, Form, Input, Modal, Select, Table, message } from 'antd';
 
 const Inventory = () => {
   const dispatch = useDispatch();
   const [inventoryData, setInventoryData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [popModal, setPopModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [form] = Form.useForm();
+  const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState({
+    productName: '',
+    category: ''
+  });
 
   const getAllInventory = async () => {
     try {
       dispatch({ type: "SHOW_LOADING" });
       const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/products/getproducts');
       setInventoryData(data);
+      setFilteredData(data);
+
+      // Extract unique categories
+      const uniqueCategories = [...new Set(data.map(item => item.category))];
+      setCategories(uniqueCategories);
+
       dispatch({ type: "HIDE_LOADING" });
     } catch (error) {
       dispatch({ type: "HIDE_LOADING" });
@@ -31,6 +43,16 @@ const Inventory = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Apply filters whenever filters or inventoryData changes
+  useEffect(() => {
+    const filtered = inventoryData.filter(item => {
+      const matchesName = item.name.toLowerCase().includes(filters.productName.toLowerCase());
+      const matchesCategory = !filters.category || item.category === filters.category;
+      return matchesName && matchesCategory;
+    });
+    setFilteredData(filtered);
+  }, [filters, inventoryData]);
 
   const openModal = (product) => {
     setSelectedProduct(product);
@@ -70,7 +92,6 @@ const Inventory = () => {
         finalCost = parseFloat(finalCost.toFixed(2));
       }
 
-      // ✅ Send updated cost to backend
       await axios.post('https://senuri-auto-server.onrender.com/api/inventory/adjust-stock', {
         productId: selectedProduct._id,
         adjustment: adjustment,
@@ -89,16 +110,37 @@ const Inventory = () => {
     }
   };
 
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      productName: '',
+      category: ''
+    });
+  };
+
   const columns = [
     { title: "Product Name", dataIndex: "name" },
     { title: "Category", dataIndex: "category" },
-    { title: "Cost", dataIndex: "cost" },
+    {
+      title: "Cost",
+      dataIndex: "cost",
+      render: cost => `$${parseFloat(cost).toFixed(2)}`
+    },
     { title: "Current Stock", dataIndex: "stockQuantity" },
     {
       title: "Action",
       dataIndex: "_id",
       render: (id, record) => (
-        <EditOutlined onClick={() => openModal(record)} />
+        <EditOutlined
+          style={{ color: '#1890ff', cursor: 'pointer' }}
+          onClick={() => openModal(record)}
+        />
       ),
     },
   ];
@@ -106,8 +148,67 @@ const Inventory = () => {
   return (
     <LayoutApp>
       <h2>Inventory Management</h2>
-      <Table dataSource={inventoryData} columns={columns} bordered rowKey="_id" />
 
+      {/* Filter Section */}
+      <Card
+        title={
+          <span>
+            <FilterOutlined style={{ marginRight: 8 }} />
+            Filter Inventory
+          </span>
+        }
+        style={{ marginBottom: 20 }}
+        bordered={false}
+      >
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label>Product Name</label>
+            <Input
+              placeholder="Search by product name"
+              value={filters.productName}
+              onChange={e => handleFilterChange('productName', e.target.value)}
+              allowClear
+              prefix={<SearchOutlined />}
+            />
+          </div>
+
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label>Category</label>
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Select category"
+              value={filters.category || undefined}
+              onChange={value => handleFilterChange('category', value)}
+              allowClear
+              showSearch
+            >
+              {categories.map(category => (
+                <Select.Option key={category} value={category}>
+                  {category}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          <Button
+            type="default"
+            onClick={resetFilters}
+            style={{ marginTop: 20 }}
+          >
+            Reset Filters
+          </Button>
+        </div>
+      </Card>
+
+      {/* Inventory Table */}
+      <Table
+        dataSource={filteredData}
+        columns={columns}
+        bordered
+        rowKey="_id"
+      />
+
+      {/* Stock Adjustment Modal */}
       <Modal
         title={`Adjust Stock - ${selectedProduct?.name}`}
         visible={popModal}

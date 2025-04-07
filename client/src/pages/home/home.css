@@ -158,3 +158,92 @@ text-align: center;
   position: relative;
   z-index: 0;
 }
+
+.edit-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px #026138;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.edit-btn:active {
+  box-shadow: 0 2px #06b86a;
+  transform: translateY(2px);
+}
+
+.remove-btn {
+  background-color: #ff0000;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-left: 5px;
+  box-shadow: 0 4px #cc0000;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.remove-btn:active {
+  box-shadow: 0 2px #cc0000;
+  transform: translateY(2px);
+}
+
+.bill-btn {
+  background-color: #4CAF50;
+  color: rgb(0, 0, 0);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px #026138;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+}
+.bill-btn:active {
+  box-shadow: 0 2px #06b86a;
+  transform: translateY(2px);
+}
+
+.clear-btn {
+  background-color: #ebe7e7;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-left: 5px;
+  box-shadow: 0 4px #a09d9d;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.new-display-btn{
+  background-color: #e4d504;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px #acb806;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.add-to-cart-btn{
+  background-color: #000000;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px #202020;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+}

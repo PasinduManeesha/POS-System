@@ -39,7 +39,7 @@ const POSBilling = () => {
   useEffect(() => {
     const generateInvoiceNumber = () => {
       const randomNumber = Math.floor(Math.random() * 100000);
-      setInvoiceNumber(`INV-${randomNumber.toString().padStart(5, "0")}`);
+      setInvoiceNumber(randomNumber.toString().padStart(5, "0"));
     };
     generateInvoiceNumber();
   }, []);
@@ -137,7 +137,7 @@ const POSBilling = () => {
       itemDescription: product.name,
       unitPrice: product.price,
       quantity: 1,
-      cost: product.cost // Set the cost from the product data
+      cost: product.cost
     });
     setShowProductDropdown(false);
   };
@@ -154,7 +154,6 @@ const POSBilling = () => {
       return;
     }
 
-    // Calculate total cost for this product
     const productWithCost = {
       ...newProduct,
       totalCost: newProduct.cost * newProduct.quantity
@@ -208,6 +207,10 @@ const POSBilling = () => {
       .toFixed(2);
   };
 
+  const calculateProfit = () => {
+    return (calculateTotal() - calculateTotalCost()).toFixed(2);
+  };
+
   const remainingAmount = () => {
     return (amountPaid - calculateTotal()).toFixed(2);
   };
@@ -215,6 +218,31 @@ const POSBilling = () => {
   // Print handling
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 10mm;
+      }
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #print-content, #print-content * {
+          visibility: visible;
+        }
+        #print-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 20px;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    `,
+    removeAfterPrint: true
   });
 
   // Function to save the bill
@@ -263,7 +291,7 @@ const POSBilling = () => {
   
       console.log("Data being sent to the backend:", billData);
   
-      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", billData);
+      await axios.post("/api/bills/addbills", billData);
       message.success("Bill Generated!");
   
       // Print the bill after it is successfully saved
@@ -273,8 +301,6 @@ const POSBilling = () => {
       console.error("Error response from backend:", error.response?.data || error.message);
     }
   };
-  
-
 
 
   return (
@@ -287,7 +313,7 @@ const POSBilling = () => {
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Invoice Number</label>
-              <input type="text" value={invoiceNumber} readOnly className="mt-1 block w-full border p-2" />
+              <input type="text" value={`INV-${invoiceNumber}`} readOnly className="mt-1 block w-full border p-2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Date</label>
@@ -317,96 +343,93 @@ const POSBilling = () => {
               )}
             </div>
             <div className="relative customer-dropdown-container">
-  <label className="block text-sm font-medium text-gray-700">Customer Name</label>
-  <input
-    type="text"
-    placeholder="Customer Name"
-    value={customerName}
-    onChange={handleCustomerNameChange}
-    onFocus={() => setShowCustomerDropdown(true)}
-    onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
-    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-  />
-
-  {showCustomerDropdown && !isTypingCustomerNumber && (
-    <div className="customer-dropdown">
-      {filteredCustomers.length > 0 ? (
-        filteredCustomers.map((customer) => (
-          <div
-            key={customer._id}
-            className="customer-dropdown-item"
-            onMouseDown={() => selectCustomer(customer)}
-          >
-            {customer.customerName} - {customer.customerPhone}
+              <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+              <input
+                type="text"
+                placeholder="Customer Name"
+                value={customerName}
+                onChange={handleCustomerNameChange}
+                onFocus={() => setShowCustomerDropdown(true)}
+                onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              />
+              {showCustomerDropdown && !isTypingCustomerNumber && (
+                <div className="customer-dropdown">
+                  {filteredCustomers.length > 0 ? (
+                    filteredCustomers.map((customer) => (
+                      <div
+                        key={customer._id}
+                        className="customer-dropdown-item"
+                        onMouseDown={() => selectCustomer(customer)}
+                      >
+                        {customer.customerName} - {customer.customerPhone}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="customer-dropdown-item text-gray-500">No customers found</div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        ))
-      ) : (
-        <div className="customer-dropdown-item text-gray-500">No customers found</div>
-      )}
-    </div>
-  )}
-</div>
-</div>
 
           {/* Product Entry Section */}
           <div className="grid grid-cols-4 gap-4 mb-4">
-  {/* Product No */}
-  <div className="relative product-dropdown-container">
-    <label className="block text-sm font-medium text-gray-700">Product No</label>
-    <input
-      type="number"
-      value={newProduct.productNo}
-      onChange={handleProductNumberChange}
-      onFocus={() => setShowProductDropdown(true)}
-      onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
-      className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-      placeholder="Enter product number"
-    />
-    {showProductDropdown && isTypingProductNumber && (
-      <div className="product-dropdown">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => (
-            <div
-              key={product._id}
-              className="product-dropdown-item"
-              onMouseDown={() => selectProduct(product)}
-            >
-              {product.productNo} - {product.name}
+            <div className="relative product-dropdown-container">
+              <label className="block text-sm font-medium text-gray-700">Product No</label>
+              <input
+                type="number"
+                value={newProduct.productNo}
+                onChange={handleProductNumberChange}
+                onFocus={() => setShowProductDropdown(true)}
+                onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                placeholder="Enter product number"
+              />
+              {showProductDropdown && isTypingProductNumber && (
+                <div className="product-dropdown">
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <div
+                        key={product._id}
+                        className="product-dropdown-item"
+                        onMouseDown={() => selectProduct(product)}
+                      >
+                        {product.productNo} - {product.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="product-dropdown-item text-gray-500">No products found</div>
+                  )}
+                </div>
+              )}
             </div>
-          ))
-        ) : (
-          <div className="product-dropdown-item text-gray-500">No products found</div>
-        )}
-      </div>
-    )}
-  </div>
 
-  {/* Product Name */}
-  <div className="relative product-dropdown-container">
-    <label className="block text-sm font-medium text-gray-700">Product Name</label>
-    <input
-      type="text"
-      value={newProduct.itemDescription}
-      onChange={handleProductNameChange}
-      onFocus={() => setShowProductDropdown(true)}
-      onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
-      className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-      placeholder="Enter product name"
-    />
-    {showProductDropdown && !isTypingProductNumber && filteredProducts.length > 0 && (
-      <div className="product-dropdown">
-        {filteredProducts.map((product) => (
-          <div
-            key={product._id}
-            className="product-dropdown-item"
-            onMouseDown={() => selectProduct(product)}
-          >
-            {product.name} - {product.productNo}
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
+            <div className="relative product-dropdown-container">
+              <label className="block text-sm font-medium text-gray-700">Product Name</label>
+              <input
+                type="text"
+                value={newProduct.itemDescription}
+                onChange={handleProductNameChange}
+                onFocus={() => setShowProductDropdown(true)}
+                onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                placeholder="Enter product name"
+              />
+              {showProductDropdown && !isTypingProductNumber && filteredProducts.length > 0 && (
+                <div className="product-dropdown">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product._id}
+                      className="product-dropdown-item"
+                      onMouseDown={() => selectProduct(product)}
+                    >
+                      {product.name} - {product.productNo}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Unit Price</label>
               <input
@@ -435,45 +458,44 @@ const POSBilling = () => {
 
           {/* Products Table */}
           <div className="table-container relative z-10">
-  <table className="w-full border mb-4">
-    <thead>
-      <tr className="bg-gray-200">
-        <th className="border p-2">Product No</th>
-        <th className="border p-2">Item Name</th>
-        <th className="border p-2">Unit Price</th>
-        <th className="border p-2">Quantity</th>
-        <th className="border p-2">Total</th>
-        <th className="border p-2">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {selectedProducts.map((product, index) => (
-        <tr key={index}>
-          <td className="border p-2">{product.productNo}</td>
-          <td className="border p-2">{product.itemDescription}</td>
-          <td className="border p-2">Rs {product.unitPrice}</td>
-          <td className="border p-2">{product.quantity}</td>
-          <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
-          <td className="border p-2">
-            <button
-              onClick={() => editProduct(index)}
-              className="bg-yellow-500 text-white p-1 rounded mr-2 hover:bg-yellow-600"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => removeProduct(index)}
-              className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
-            >
-              Remove
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-
+            <table className="w-full border mb-4">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="border p-2">Product No</th>
+                  <th className="border p-2">Item Name</th>
+                  <th className="border p-2">Unit Price</th>
+                  <th className="border p-2">Quantity</th>
+                  <th className="border p-2">Total</th>
+                  <th className="border p-2">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedProducts.map((product, index) => (
+                  <tr key={index}>
+                    <td className="border p-2">{product.productNo}</td>
+                    <td className="border p-2">{product.itemDescription}</td>
+                    <td className="border p-2">Rs {product.unitPrice}</td>
+                    <td className="border p-2">{product.quantity}</td>
+                    <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
+                    <td className="border p-2">
+                      <button
+                        onClick={() => editProduct(index)}
+                        className="bg-yellow-500 text-white p-1 rounded mr-2 hover:bg-yellow-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => removeProduct(index)}
+                        className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Payment Section */}
           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -528,58 +550,78 @@ const POSBilling = () => {
             </button>
           </div>
 
-          {/* Printable Invoice Section */}
+          {/* Printable Invoice Section - Hidden until printed */}
           <div style={{ display: "none" }}>
-            <div ref={componentRef} className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Invoice</h2>
-              <div className="grid grid-cols-2 gap-4 mb-6">
+            <div id="print-content" ref={componentRef} style={{ padding: 20 }}>
+              <h2 style={{ textAlign: 'center', marginBottom: 20 }}>INVOICE</h2>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
-                  <p className="font-semibold">Invoice Number:</p>
-                  <p>{invoiceNumber}</p>
+                  <p><strong>Invoice No:</strong> INV-{invoiceNumber}</p>
+                  <p><strong>Date:</strong> {date}</p>
                 </div>
-                <div>
-                  <p className="font-semibold">Date:</p>
-                  <p>{date}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Customer Number:</p>
-                  <p>{customerNumber}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Customer Name:</p>
-                  <p>{customerName}</p>
+                <div style={{ textAlign: 'right' }}>
+                  <p><strong>Customer:</strong> {customerName || 'N/A'}</p>
+                  <p><strong>Phone:</strong> {customerNumber || 'N/A'}</p>
                 </div>
               </div>
 
-              <table className="w-full border mb-6">
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
                 <thead>
-                  <tr className="bg-gray-200">
-                    <th className="border p-2">Product No</th>
-                    <th className="border p-2">Item Description</th>
-                    <th className="border p-2">Unit Price</th>
-                    <th className="border p-2">Quantity</th>
-                    <th className="border p-2">Total</th>
+                  <tr style={{ backgroundColor: '#f0f0f0' }}>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>Product No</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>Item Description</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Unit Price</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>Qty</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedProducts.map((product, index) => (
                     <tr key={index}>
-                      <td className="border p-2">{product.productNo}</td>
-                      <td className="border p-2">{product.itemDescription}</td>
-                      <td className="border p-2">Rs {product.unitPrice}</td>
-                      <td className="border p-2">{product.quantity}</td>
-                      <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd' }}>{product.productNo}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd' }}>{product.itemDescription}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Rs {product.unitPrice?.toFixed(2) || '0.00'}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>{product.quantity || 0}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div className="text-right">
-                <p className="font-semibold text-lg">Total Value: Rs {calculateTotal()}</p>
-                <p className="font-semibold text-lg">Amount Paid: Rs {amountPaid}</p>
-                <p className="font-semibold text-lg">
-                  Remaining Amount: Rs {remainingAmount()}
-                </p>
+              <div style={{ textAlign: 'right', marginTop: 20 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Sub Total:</span>
+                  <strong>Rs {calculateTotal()}</strong>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Tax:</span>
+                  <strong>Rs 0.00</strong>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Total Amount:</span>
+                  <strong>Rs {calculateTotal()}</strong>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Profit:</span>
+                  <strong>Rs {calculateProfit()}</strong>
+                </div>
+                {amountPaid && (
+                  <>
+                    <div style={{ marginBottom: 8 }}>
+                      <span style={{ marginRight: 10 }}>Amount Paid:</span>
+                      <strong>Rs {amountPaid}</strong>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <span style={{ marginRight: 10 }}>Remaining Amount:</span>
+                      <strong>Rs {remainingAmount()}</strong>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div style={{ marginTop: 30, textAlign: 'center', fontStyle: 'italic' }}>
+                Thank you for your business!
               </div>
             </div>
           </div>

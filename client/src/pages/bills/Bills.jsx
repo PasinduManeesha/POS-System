@@ -17,10 +17,7 @@ const Bills = () => {
       try {
         dispatch({ type: "SHOW_LOADING" });
         const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/bills/getbills');
-        
-        // Correct response structure handling
         setBillsData(data.data || []);
-        
       } catch(error) {
         console.error("Error fetching bills:", error);
         setBillsData([]);
@@ -33,10 +30,38 @@ const Bills = () => {
         getAllBills();
     }, []);
 
+    const handlePrint = useReactToPrint({
+        content: () => componentRef.current,
+        pageStyle: `
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+                #print-content, #print-content * {
+                    visibility: visible;
+                }
+                #print-content {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                }
+                .no-print {
+                    display: none !important;
+                }
+            }
+        `,
+        removeAfterPrint: true
+    });
+
     const columns = [
       {
         title: "Bill No.",
-        dataIndex: "billNumber",
+        dataIndex: "invoiceNumber",
         render: (number) => number ? `INV-${number.toString().padStart(5, '0')}` : '-'
       },
       {
@@ -57,17 +82,17 @@ const Bills = () => {
       { 
           title: "Sub Total", 
           dataIndex: "subTotal",
-          render: (value) => `$${(value || 0).toFixed(2)}`
+          render: (value) => `Rs ${(value || 0).toFixed(2)}`
       },
       { 
-          title: "Tax", 
-          dataIndex: "tax",
-          render: (value) => `$${(value || 0).toFixed(2)}`
+          title: "Profit", 
+          dataIndex: "profit",
+          render: (value) => `Rs ${(value || 0).toFixed(2)}`
       },
       { 
           title: "Total Amount", 
           dataIndex: "totalAmount",
-          render: (value) => `$${(value || 0).toFixed(2)}`
+          render: (value) => `Rs ${(value || 0).toFixed(2)}`
       },
       {
           title: "Action",
@@ -84,10 +109,6 @@ const Bills = () => {
       }
     ];
 
-    const handlePrint = useReactToPrint({
-        content: () => componentRef.current,
-    });
-
     return (
         <Layout>
             <h2>All Invoices</h2>
@@ -103,37 +124,83 @@ const Bills = () => {
             />
             
             <Modal
-    title="Invoice Details"
-    width={800}
-    visible={popModal}  // Fixed: no space before =
-    onCancel={() => setPopModal(false)}
-    footer={null}
-    destroyOnClose
->
-    {selectedBill && (
-        <div className="card" ref={componentRef}>
-            <div className="detail-group">
-                <span>Bill Number:</span>
-                <b>{selectedBill.billNumber ? `INV-${selectedBill.billNumber.toString().padStart(5, '0')}` : 'N/A'}</b>
-            </div>
-            {selectedBill.cartItems?.map((product, index) => (
-                <div key={index}>
-                    <span>{product.name || 'N/A'}</span>
-                    <span>{product.price ? `$${product.price.toFixed(2)}` : 'N/A'}</span>
+                title="Invoice Details"
+                width={800}
+                visible={popModal}
+                onCancel={() => setPopModal(false)}
+                footer={null}
+                destroyOnClose
+            >
+                <div id="print-content" ref={componentRef} style={{ padding: 20 }}>
+                    <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                        <h2>INVOICE</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <div>
+                                <p><strong>Invoice No:</strong> {selectedBill?.billNumber ? `INV-${selectedBill.invoiceNumber.toString().padStart(5, '0')}` : 'N/A'}</p>
+                                <p><strong>Date:</strong> {selectedBill?.createdAt ? new Date(selectedBill.createdAt).toLocaleDateString() : 'N/A'}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <p><strong>Customer:</strong> {selectedBill?.customerName || 'N/A'}</p>
+                                <p><strong>Phone:</strong> {selectedBill?.customerPhone || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+                        <thead>
+                            <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>Item</th>
+                                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Unit Price</th>
+                                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>Qty</th>
+                                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {selectedBill?.cartItems?.map((item, index) => (
+                                <tr key={index}>
+                                    <td style={{ padding: 8, border: '1px solid #ddd' }}>{item.itemDescription || 'N/A'}</td>
+                                    <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Rs {item.unitPrice?.toFixed(2) || '0.00'}</td>
+                                    <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>{item.quantity || 0}</td>
+                                    <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Rs {(item.unitPrice * item.quantity).toFixed(2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <div style={{ textAlign: 'right', marginTop: 20 }}>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Sub Total:</span>
+                            <strong>Rs {selectedBill?.subTotal?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Tax:</span>
+                            <strong>Rs {selectedBill?.tax?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Total Amount:</span>
+                            <strong>Rs {selectedBill?.totalAmount?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Profit:</span>
+                            <strong>Rs {selectedBill?.profit?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: 30, textAlign: 'center', fontStyle: 'italic' }}>
+                        Thank you for your business!
+                    </div>
                 </div>
-            ))}
-        </div>
-    )}
-    <div className="print-button">
-        <Button 
-            type="primary" 
-            onClick={handlePrint}
-            style={{ marginTop: 20 }}
-        >
-            Generate Invoice
-        </Button>
-    </div>
-</Modal>
+
+                <div className="no-print" style={{ textAlign: 'center', marginTop: 20 }}>
+                    <Button 
+                        type="primary" 
+                        onClick={handlePrint}
+                        style={{ width: 150 }}
+                    >
+                        Print Invoice
+                    </Button>
+                </div>
+            </Modal>
         </Layout>
     );
 };

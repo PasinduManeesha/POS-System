@@ -154,7 +154,7 @@ const Inventory = () => {
         title={
           <span>
             <FilterOutlined style={{ marginRight: 8 }} />
-            Filter Inventory
+            Filter inventory
           </span>
         }
         style={{ marginBottom: 20 }}

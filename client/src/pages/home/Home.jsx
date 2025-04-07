@@ -303,7 +303,7 @@ const POSBilling = () => {
                 className="mt-1 block w-full border p-2"
               />
               {showCustomerDropdown && isTypingCustomerNumber && (
-                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg">
+               <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-y-auto">
                   {filteredCustomers.map((customer) => (
                     <div
                       key={customer._id}
@@ -316,78 +316,97 @@ const POSBilling = () => {
                 </div>
               )}
             </div>
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700">Customer Name</label>
-              <input
-                type="text"
-                placeholder="Customer Name"
-                value={customerName}
-                onChange={handleCustomerNameChange}
-                className="mt-1 block w-full border p-2"
-              />
-              {showCustomerDropdown && !isTypingCustomerNumber && (
-                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                  {filteredCustomers.map((customer) => (
-                    <div
-                      key={customer._id}
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => selectCustomer(customer)}
-                    >
-                      {customer.customerName} - {customer.customerPhone}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <div className="relative customer-dropdown-container">
+  <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+  <input
+    type="text"
+    placeholder="Customer Name"
+    value={customerName}
+    onChange={handleCustomerNameChange}
+    onFocus={() => setShowCustomerDropdown(true)}
+    onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
+    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+  />
+
+  {showCustomerDropdown && !isTypingCustomerNumber && (
+    <div className="customer-dropdown">
+      {filteredCustomers.length > 0 ? (
+        filteredCustomers.map((customer) => (
+          <div
+            key={customer._id}
+            className="customer-dropdown-item"
+            onMouseDown={() => selectCustomer(customer)}
+          >
+            {customer.customerName} - {customer.customerPhone}
           </div>
+        ))
+      ) : (
+        <div className="customer-dropdown-item text-gray-500">No customers found</div>
+      )}
+    </div>
+  )}
+</div>
+</div>
 
           {/* Product Entry Section */}
           <div className="grid grid-cols-4 gap-4 mb-4">
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700">Product No</label>
-              <input
-                type="number"
-                value={newProduct.productNo}
-                onChange={handleProductNumberChange}
-                className="mt-1 block w-full border p-2"
-              />
-              {showProductDropdown && isTypingProductNumber && (
-                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product._id}
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => selectProduct(product)}
-                    >
-                      {product.productNo} - {product.name}
-                    </div>
-                  ))}
-                </div>
-              )}
+  {/* Product No */}
+  <div className="relative product-dropdown-container">
+    <label className="block text-sm font-medium text-gray-700">Product No</label>
+    <input
+      type="number"
+      value={newProduct.productNo}
+      onChange={handleProductNumberChange}
+      onFocus={() => setShowProductDropdown(true)}
+      onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+      className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+      placeholder="Enter product number"
+    />
+    {showProductDropdown && isTypingProductNumber && (
+      <div className="product-dropdown">
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <div
+              key={product._id}
+              className="product-dropdown-item"
+              onMouseDown={() => selectProduct(product)}
+            >
+              {product.productNo} - {product.name}
             </div>
-            <div className="relative">
-              <label className="block text-sm font-medium text-gray-700">Product Name</label>
-              <input
-                type="text"
-                value={newProduct.itemDescription}
-                onChange={handleProductNameChange}
-                className="mt-1 block w-full border p-2"
-                placeholder="Enter product name"
-              />
-              {showProductDropdown && !isTypingProductNumber && filteredProducts.length > 0 && (
-                <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product._id}
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => selectProduct(product)}
-                    >
-                      {product.name} - {product.productNo}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          ))
+        ) : (
+          <div className="product-dropdown-item text-gray-500">No products found</div>
+        )}
+      </div>
+    )}
+  </div>
+
+  {/* Product Name */}
+  <div className="relative product-dropdown-container">
+    <label className="block text-sm font-medium text-gray-700">Product Name</label>
+    <input
+      type="text"
+      value={newProduct.itemDescription}
+      onChange={handleProductNameChange}
+      onFocus={() => setShowProductDropdown(true)}
+      onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+      className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+      placeholder="Enter product name"
+    />
+    {showProductDropdown && !isTypingProductNumber && filteredProducts.length > 0 && (
+      <div className="product-dropdown">
+        {filteredProducts.map((product) => (
+          <div
+            key={product._id}
+            className="product-dropdown-item"
+            onMouseDown={() => selectProduct(product)}
+          >
+            {product.name} - {product.productNo}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Unit Price</label>
               <input
@@ -415,45 +434,46 @@ const POSBilling = () => {
             </button>
 
           {/* Products Table */}
-          <div className="table-container">
-            <table className="w-full border mb-4">
-              <thead>
-                <tr className="bg-gray-200">
-                  <th className="border p-2">Product No</th>
-                  <th className="border p-2">Item Name</th>
-                  <th className="border p-2">Unit Price</th>
-                  <th className="border p-2">Quantity</th>
-                  <th className="border p-2">Total</th>
-                  <th className="border p-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedProducts.map((product, index) => (
-                  <tr key={index}>
-                    <td className="border p-2">{product.productNo}</td>
-                    <td className="border p-2">{product.itemDescription}</td>
-                    <td className="border p-2">${product.unitPrice}</td>
-                    <td className="border p-2">{product.quantity}</td>
-                    <td className="border p-2">${(product.unitPrice * product.quantity).toFixed(2)}</td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => editProduct(index)}
-                        className="bg-yellow-500 text-white p-1 rounded mr-2 hover:bg-yellow-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => removeProduct(index)}
-                        className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div className="table-container relative z-10">
+  <table className="w-full border mb-4">
+    <thead>
+      <tr className="bg-gray-200">
+        <th className="border p-2">Product No</th>
+        <th className="border p-2">Item Name</th>
+        <th className="border p-2">Unit Price</th>
+        <th className="border p-2">Quantity</th>
+        <th className="border p-2">Total</th>
+        <th className="border p-2">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {selectedProducts.map((product, index) => (
+        <tr key={index}>
+          <td className="border p-2">{product.productNo}</td>
+          <td className="border p-2">{product.itemDescription}</td>
+          <td className="border p-2">Rs {product.unitPrice}</td>
+          <td className="border p-2">{product.quantity}</td>
+          <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
+          <td className="border p-2">
+            <button
+              onClick={() => editProduct(index)}
+              className="bg-yellow-500 text-white p-1 rounded mr-2 hover:bg-yellow-600"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => removeProduct(index)}
+              className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+            >
+              Remove
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
 
           {/* Payment Section */}
           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -482,11 +502,11 @@ const POSBilling = () => {
           {/* Totals Section */}
           <div className="flex justify-between font-bold mb-4">
             <span>Total Value:</span>
-            <span>${calculateTotal()}</span>
+            <span>Rs {calculateTotal()}</span>
           </div>
           <div className="flex justify-between font-bold mb-4">
             <span>Remaining Amount to be Paid:</span>
-            <span>${remainingAmount()}</span>
+            <span>Rs {remainingAmount()}</span>
           </div>
 
           {/* Action Buttons */}
@@ -546,19 +566,19 @@ const POSBilling = () => {
                     <tr key={index}>
                       <td className="border p-2">{product.productNo}</td>
                       <td className="border p-2">{product.itemDescription}</td>
-                      <td className="border p-2">${product.unitPrice}</td>
+                      <td className="border p-2">Rs {product.unitPrice}</td>
                       <td className="border p-2">{product.quantity}</td>
-                      <td className="border p-2">${(product.unitPrice * product.quantity).toFixed(2)}</td>
+                      <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               <div className="text-right">
-                <p className="font-semibold text-lg">Total Value: ${calculateTotal()}</p>
-                <p className="font-semibold text-lg">Amount Paid: ${amountPaid}</p>
+                <p className="font-semibold text-lg">Total Value: Rs {calculateTotal()}</p>
+                <p className="font-semibold text-lg">Amount Paid: Rs {amountPaid}</p>
                 <p className="font-semibold text-lg">
-                  Remaining Amount: ${remainingAmount()}
+                  Remaining Amount: Rs {remainingAmount()}
                 </p>
               </div>
             </div>

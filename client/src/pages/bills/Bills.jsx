@@ -1,8 +1,8 @@
-import { Button, Modal, Table } from 'antd';
+import { Button, Modal, Table, Input, Row, Col, Card } from 'antd';
 import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
-import { EyeOutlined } from '@ant-design/icons';
+import { EyeOutlined, FilterOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import Layout from '../../components/Layout';
 
@@ -10,17 +10,25 @@ const Bills = () => {
     const componentRef = useRef();
     const dispatch = useDispatch();
     const [billsData, setBillsData] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
     const [popModal, setPopModal] = useState(false);
     const [selectedBill, setSelectedBill] = useState(null);
+    const [searchText, setSearchText] = useState({
+        invoiceNumber: '',
+        customerName: '',
+        customerPhone: ''
+    });
 
     const getAllBills = async () => {
       try {
         dispatch({ type: "SHOW_LOADING" });
         const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/bills/getbills');
         setBillsData(data.data || []);
+        setFilteredData(data.data || []);
       } catch(error) {
         console.error("Error fetching bills:", error);
         setBillsData([]);
+        setFilteredData([]);
       } finally {
         dispatch({ type: "HIDE_LOADING" });
       }
@@ -29,6 +37,34 @@ const Bills = () => {
     useEffect(() => {
         getAllBills();
     }, []);
+
+    useEffect(() => {
+        // Apply filters whenever searchText changes
+        const filtered = billsData.filter(bill => {
+            const matchesInvoice = bill.invoiceNumber?.toString().includes(searchText.invoiceNumber) || 
+                                  `INV-${bill.invoiceNumber?.toString().padStart(5, '0')}`.includes(searchText.invoiceNumber);
+            const matchesName = bill.customerName?.toLowerCase().includes(searchText.customerName.toLowerCase());
+            const matchesPhone = bill.customerPhone?.includes(searchText.customerPhone);
+            
+            return matchesInvoice && matchesName && matchesPhone;
+        });
+        setFilteredData(filtered);
+    }, [searchText, billsData]);
+
+    const handleSearch = (key, value) => {
+        setSearchText(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
+    const handleResetFilters = () => {
+        setSearchText({
+            invoiceNumber: '',
+            customerName: '',
+            customerPhone: ''
+        });
+    };
 
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
@@ -112,8 +148,68 @@ const Bills = () => {
     return (
         <Layout>
             <h2>All Invoices</h2>
+            
+            {/* Filter Section */}
+            <Card 
+                title={
+                    <span>
+                        <FilterOutlined style={{ marginRight: 8 }} />
+                        Filter Invoices
+                    </span>
+                } 
+                style={{ marginBottom: 20 }}
+                bordered={false}
+            >
+                <Row gutter={16}>
+                    <Col xs={24} sm={12} md={8} lg={8}>
+                        <div style={{ marginBottom: 16 }}>
+                            <label>Bill No.</label>
+                            <Input
+                                placeholder="Search by Bill No."
+                                value={searchText.invoiceNumber}
+                                onChange={e => handleSearch('invoiceNumber', e.target.value)}
+                                allowClear
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    </Col>
+                    <Col xs={24} sm={12} md={8} lg={8}>
+                        <div style={{ marginBottom: 16 }}>
+                            <label>Customer Name</label>
+                            <Input
+                                placeholder="Search by Customer Name"
+                                value={searchText.customerName}
+                                onChange={e => handleSearch('customerName', e.target.value)}
+                                allowClear
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    </Col>
+                    <Col xs={24} sm={12} md={8} lg={8}>
+                        <div style={{ marginBottom: 16 }}>
+                            <label>Contact Number</label>
+                            <Input
+                                placeholder="Search by Contact Number"
+                                value={searchText.customerPhone}
+                                onChange={e => handleSearch('customerPhone', e.target.value)}
+                                allowClear
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    </Col>
+                </Row>
+                <Button 
+                    type="default" 
+                    onClick={handleResetFilters}
+                    style={{ marginTop: 8 }}
+                >
+                    Reset Filters
+                </Button>
+            </Card>
+
+            {/* Table Section */}
             <Table 
-                dataSource={billsData}
+                dataSource={filteredData}
                 columns={columns} 
                 bordered 
                 rowKey="_id"
@@ -136,7 +232,7 @@ const Bills = () => {
                         <h2>INVOICE</h2>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                             <div>
-                                <p><strong>Invoice No:</strong> {selectedBill?.billNumber ? `INV-${selectedBill.invoiceNumber.toString().padStart(5, '0')}` : 'N/A'}</p>
+                                <p><strong>Invoice No:</strong> {selectedBill?.invoiceNumber ? `INV-${selectedBill.invoiceNumber.toString().padStart(5, '0')}` : 'N/A'}</p>
                                 <p><strong>Date:</strong> {selectedBill?.createdAt ? new Date(selectedBill.createdAt).toLocaleDateString() : 'N/A'}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>

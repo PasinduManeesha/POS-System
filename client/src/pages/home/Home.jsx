@@ -590,27 +590,16 @@ const POSBilling = () => {
               </table>
 
               <div style={{ textAlign: 'right', marginTop: 20 }}>
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ marginRight: 10 }}>Sub Total:</span>
-                  <strong>Rs {calculateTotal()}</strong>
-                </div>
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ marginRight: 10 }}>Tax:</span>
-                  <strong>Rs 0.00</strong>
-                </div>
+                
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ marginRight: 10 }}>Total Amount:</span>
                   <strong>Rs {calculateTotal()}</strong>
-                </div>
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ marginRight: 10 }}>Profit:</span>
-                  <strong>Rs {calculateProfit()}</strong>
                 </div>
                 {amountPaid && (
                   <>
                     <div style={{ marginBottom: 8 }}>
                       <span style={{ marginRight: 10 }}>Amount Paid:</span>
-                      <strong>Rs {amountPaid}</strong>
+                      <strong>Rs {amountPaid}.00</strong>
                     </div>
                     <div style={{ marginBottom: 8 }}>
                       <span style={{ marginRight: 10 }}>Remaining Amount:</span>

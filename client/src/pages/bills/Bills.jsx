@@ -265,21 +265,14 @@ const Bills = () => {
                     </table>
 
                     <div style={{ textAlign: 'right', marginTop: 20 }}>
-                        <div style={{ marginBottom: 8 }}>
+                        {/* <div style={{ marginBottom: 8 }}>
                             <span style={{ marginRight: 10 }}>Sub Total:</span>
                             <strong>Rs {selectedBill?.subTotal?.toFixed(2) || '0.00'}</strong>
-                        </div>
-                        <div style={{ marginBottom: 8 }}>
-                            <span style={{ marginRight: 10 }}>Tax:</span>
-                            <strong>Rs {selectedBill?.tax?.toFixed(2) || '0.00'}</strong>
-                        </div>
+                        </div> */}
+                        
                         <div style={{ marginBottom: 8 }}>
                             <span style={{ marginRight: 10 }}>Total Amount:</span>
                             <strong>Rs {selectedBill?.totalAmount?.toFixed(2) || '0.00'}</strong>
-                        </div>
-                        <div style={{ marginBottom: 8 }}>
-                            <span style={{ marginRight: 10 }}>Profit:</span>
-                            <strong>Rs {selectedBill?.profit?.toFixed(2) || '0.00'}</strong>
                         </div>
                     </div>
 

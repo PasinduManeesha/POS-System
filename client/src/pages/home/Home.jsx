@@ -17,7 +17,7 @@ const POSBilling = () => {
     itemDescription: "",
     unitPrice: "",
     quantity: "",
-    cost: "", 
+    cost: "",
   });
   const [editingIndex, setEditingIndex] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
@@ -102,15 +102,15 @@ const POSBilling = () => {
       setShowProductDropdown(false);
       return;
     }
-  
+
     if (isTypingProductNumber) {
       const filtered = allProducts.filter(product =>
-         product.productNo.startsWith(input)
+        product.productNo.startsWith(input)
       );
       setFilteredProducts(filtered);
     } else {
       const filtered = allProducts.filter(product =>
-         product.name.toLowerCase().includes(input.toLowerCase())
+        product.name.toLowerCase().includes(input.toLowerCase())
       );
       setFilteredProducts(filtered);
     }
@@ -253,21 +253,21 @@ const POSBilling = () => {
         message.error("Please enter customer details before saving the bill.");
         return;
       }
-  
+
       // Validate cart items
       if (selectedProducts.length === 0) {
         message.error("Please add at least one product to the cart.");
         return;
       }
-  
+
       const subTotal = calculateTotal();
       const tax = Number(((subTotal / 100) * 0).toFixed(2)); // Assuming 0% tax (adjust as needed)
       const totalAmount = Number((Number(subTotal) + tax).toFixed(2));
       const totalCost = calculateTotalCost();
-  
+
       // Calculate profit
       const profit = totalAmount - totalCost;
-  
+
       const billData = {
         invoiceNumber,
         customerName,
@@ -288,12 +288,12 @@ const POSBilling = () => {
         })),
         createdAt: new Date(),
       };
-  
+
       console.log("Data being sent to the backend:", billData);
-  
-      await axios.post("/api/bills/addbills", billData);
+
+      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", billData);
       message.success("Bill Generated!");
-  
+
       // Print the bill after it is successfully saved
       handlePrint();
     } catch (error) {
@@ -329,7 +329,7 @@ const POSBilling = () => {
                 className="mt-1 block w-full border p-2"
               />
               {showCustomerDropdown && isTypingCustomerNumber && (
-               <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-y-auto">
                   {filteredCustomers.map((customer) => (
                     <div
                       key={customer._id}
@@ -452,9 +452,9 @@ const POSBilling = () => {
               />
             </div>
           </div>
-          <button onClick={addProduct} className="mt-2 bg-blue-500 text-black p-2 addToCardBtn rounded">
-              {editingIndex !== null ? "Update Product" : "Add to Cart"}
-            </button>
+          <button onClick={addProduct} className="mt-2 add-to-cart-btn bg-blue-500 text-white p-2 addToCardBtn rounded">
+            {editingIndex !== null ? "Update Product" : "Add to Cart"}
+          </button>
 
           {/* Products Table */}
           <div className="table-container relative z-10">
@@ -480,13 +480,13 @@ const POSBilling = () => {
                     <td className="border p-2">
                       <button
                         onClick={() => editProduct(index)}
-                        className="bg-yellow-500 text-white p-1 rounded mr-2 hover:bg-yellow-600"
+                        className="bg-green-700 text-black p-2   edit-btn rounded mr-2 hover:bg-yellow-600"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => removeProduct(index)}
-                        className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                        className="bg-red-500 text-black p-2 remove-btn  rounded hover:bg-red-600"
                       >
                         Remove
                       </button>
@@ -506,7 +506,7 @@ const POSBilling = () => {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="mt-1 block w-full border p-2"
               >
-                <option value="Cash on Delivery">Cash on Delivery</option>
+                <option value="Cash on Delivery">Cash</option>
                 <option value="Credit Card Payment">Credit Card Payment</option>
               </select>
             </div>
@@ -534,19 +534,42 @@ const POSBilling = () => {
           {/* Action Buttons */}
           <div className="flex justify-between">
             <button
-              className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+              className="bg-green-500 bill-btn text-blck p-2 rounded hover:bg-green-600"
               onClick={saveBill}
             >
               Bill Print
             </button>
-            <button className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600" onClick={saveBill}>
-              Suspend
+            <button
+              className="bg-red-500 clear-btn text-black p-2 rounded hover:bg-red-600"
+              onClick={() => {
+                // Generate new invoice number
+                const randomNumber = Math.floor(Math.random() * 100000);
+                setInvoiceNumber(randomNumber.toString().padStart(5, "0"));
+
+                // Clear all form fields
+                setSelectedProducts([]);
+                setCustomerName("");
+                setCustomerNumber("");
+                setAmountPaid("");
+                setNewProduct({
+                  productNo: "",
+                  itemDescription: "",
+                  unitPrice: "",
+                  quantity: "",
+                  cost: ""
+                });
+                message.success("Form cleared successfully! New bill number generated.");
+              }}
+            >
+              Clear Form
             </button>
-            <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+            <button
+              className="bg-yellow-400 text-black p-2 new-display-btn rounded hover:bg-yellow-500"
+              onClick={() => {
+                window.open('/', '_blank'); // Open bills view in new tab
+              }}
+            >
               New Display
-            </button>
-            <button className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-              End Storage
             </button>
           </div>
 
@@ -554,7 +577,7 @@ const POSBilling = () => {
           <div style={{ display: "none" }}>
             <div id="print-content" ref={componentRef} style={{ padding: 20 }}>
               <h2 style={{ textAlign: 'center', marginBottom: 20 }}>INVOICE</h2>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div>
                   <p><strong>Invoice No:</strong> INV-{invoiceNumber}</p>
@@ -590,7 +613,7 @@ const POSBilling = () => {
               </table>
 
               <div style={{ textAlign: 'right', marginTop: 20 }}>
-                
+
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ marginRight: 10 }}>Total Amount:</span>
                   <strong>Rs {calculateTotal()}</strong>

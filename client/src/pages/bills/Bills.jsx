@@ -151,12 +151,7 @@ const Bills = () => {
 
             {/* Filter Section */}
             <Card
-                title={
-                    <span>
-                        <FilterOutlined style={{ marginRight: 8 }} />
-                        Filter Invoices
-                    </span>
-                }
+                
                 style={{ marginBottom: 20 }}
                 bordered={false}
             >

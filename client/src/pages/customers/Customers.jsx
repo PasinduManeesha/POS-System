@@ -140,6 +140,9 @@ const Customers = () => {
   return (
     <Layout>
       <h2>All Customers</h2>
+      <Button className="add-new" onClick={() => setPopModal(true)}>
+        Add New Customer
+      </Button>
 
       {/* Filter Section */}
       <Card
@@ -184,9 +187,7 @@ const Customers = () => {
         </Row>
       </Card>
 
-      <Button className="add-new" onClick={() => setPopModal(true)}>
-        Add New Customer
-      </Button>
+      
 
       <Table
         dataSource={filteredData}

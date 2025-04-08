@@ -64,9 +64,6 @@ export const addBillsController = async (req, res) => {
   }
 };
 
-
-
-
 // Get all bills
 export const getBillsController = async (req, res) => {
   try {
@@ -82,5 +79,18 @@ export const getBillsController = async (req, res) => {
       message: "Error fetching bills",
       error: error.message
     });
+  }
+};
+
+export const deleteAllBillsController = async (req, res) => {
+  try {
+    // Delete all bills from the database
+    await Bills.deleteMany({});
+
+    // Send success response
+    res.status(200).json({ success: true, message: "All bills deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting all bills:", error);
+    res.status(500).json({ success: false, message: "Error deleting all bills", error: error.message });
   }
 };

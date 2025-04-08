@@ -146,12 +146,7 @@ const Customers = () => {
 
       {/* Filter Section */}
       <Card
-        title={
-          <span>
-            <FilterOutlined style={{ marginRight: 8 }} />
-            Filter Customers
-          </span>
-        }
+       
         style={{ marginBottom: 20 }}
         bordered={false}
       >

@@ -129,15 +129,14 @@ const Category = () => {
   return (
     <Layout>
       <h2>All Categories</h2>
+      
+      <Button className="add-new" onClick={() => setPopModal(true)}>
+        Add New Category
+      </Button>
 
       {/* Filter Section */}
       <Card
-        title={
-          <span>
-            <FilterOutlined style={{ marginRight: 8 }} />
-            Filter Categories
-          </span>
-        }
+        
         style={{ marginBottom: 20 }}
         bordered={false}
       >
@@ -163,9 +162,6 @@ const Category = () => {
         </Row>
       </Card>
 
-      <Button className="add-new" onClick={() => setPopModal(true)}>
-        Add New Category
-      </Button>
 
       <Table
         dataSource={filteredData}

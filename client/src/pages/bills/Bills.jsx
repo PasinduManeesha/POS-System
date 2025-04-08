@@ -116,8 +116,8 @@ const Bills = () => {
             render: (text) => text || 'N/A'
         },
         {
-            title: "Sub Total",
-            dataIndex: "subTotal",
+            title: "Cost",
+            dataIndex: "cost",
             render: (value) => `Rs ${(value || 0).toFixed(2)}`
         },
         {

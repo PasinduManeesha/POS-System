@@ -140,15 +140,13 @@ const Suppliers = () => {
   return (
     <Layout>
       <h2>All Suppliers</h2>
+      <Button className="add-new" onClick={() => setPopModal(true)}>
+        Add New Supplier
+      </Button>
 
       {/* Filter Section */}
       <Card
-        title={
-          <span>
-            <FilterOutlined style={{ marginRight: 8 }} />
-            Filter Suppliers
-          </span>
-        }
+        
         style={{ marginBottom: 20 }}
         bordered={false}
       >
@@ -182,9 +180,7 @@ const Suppliers = () => {
         </Row>
       </Card>
 
-      <Button className="add-new" onClick={() => setPopModal(true)}>
-        Add New Supplier
-      </Button>
+      
 
       <Table
         dataSource={filteredData}

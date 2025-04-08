@@ -151,12 +151,7 @@ const Inventory = () => {
 
       {/* Filter Section */}
       <Card
-        title={
-          <span>
-            <FilterOutlined style={{ marginRight: 8 }} />
-            Filter inventory
-          </span>
-        }
+        
         style={{ marginBottom: 20 }}
         bordered={false}
       >

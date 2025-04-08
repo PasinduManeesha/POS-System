@@ -146,7 +146,6 @@ const Suppliers = () => {
 
       {/* Filter Section */}
       <Card
-        
         style={{ marginBottom: 20 }}
         bordered={false}
       >

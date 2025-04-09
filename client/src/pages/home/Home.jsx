@@ -52,6 +52,13 @@ const POSBilling = () => {
         const productsRes = await axios.get("https://senuri-auto-server.onrender.com/api/products/getproducts");
         setCustomers(customersRes.data);
         setAllProducts(productsRes.data);
+        
+        // Find and set the Cash customer if exists
+        const cashCustomer = customersRes.data.find(c => c.customerName === "Cash");
+        if (cashCustomer) {
+          setCustomerName("Cash");
+          // No need to set customer number for Cash customer
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -63,7 +70,7 @@ const POSBilling = () => {
   const filterCustomers = (input) => {
     if (isTypingCustomerNumber) {
       const filtered = customers.filter(customer =>
-        customer.customerPhone.includes(input)
+        customer.customerPhone && customer.customerPhone.includes(input)
       );
       setFilteredCustomers(filtered);
     } else {
@@ -90,7 +97,7 @@ const POSBilling = () => {
   };
 
   const selectCustomer = (customer) => {
-    setCustomerNumber(customer.customerPhone);
+    setCustomerNumber(customer.customerPhone || "");
     setCustomerName(customer.customerName);
     setShowCustomerDropdown(false);
   };
@@ -249,8 +256,15 @@ const POSBilling = () => {
   const saveBill = async () => {
     try {
       // Validate customer details
-      if (!customerName || !customerNumber) {
+      if (!customerName) {
         message.error("Please enter customer details before saving the bill.");
+        return;
+      }
+      
+      // If remaining amount is negative (credit sale) and customer is Cash or doesn't have number
+      const remaining = remainingAmount();
+      if (remaining < 0 && (customerName === "Cash" || !customerNumber)) {
+        message.error("Cannot process credit sales to 'Cash' customer or without valid customer details. Please select a registered customer with contact number.");
         return;
       }
 
@@ -271,7 +285,7 @@ const POSBilling = () => {
       const billData = {
         invoiceNumber,
         customerName,
-        customerPhone: customerNumber,
+        customerPhone: customerNumber || "N/A", // Handle Cash customer case
         customerAddress: "N/A",
         subTotal,
         tax,
@@ -302,7 +316,6 @@ const POSBilling = () => {
     }
   };
 
-
   return (
     <LayoutApp>
       <div className="p-6 min-h-screen flex justify-center items-center">
@@ -327,6 +340,7 @@ const POSBilling = () => {
                 value={customerNumber}
                 onChange={handleCustomerNumberChange}
                 className="mt-1 block w-full border p-2"
+                disabled={customerName === "Cash"}
               />
               {showCustomerDropdown && isTypingCustomerNumber && (
                 <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-y-auto">
@@ -362,7 +376,7 @@ const POSBilling = () => {
                         className="customer-dropdown-item"
                         onMouseDown={() => selectCustomer(customer)}
                       >
-                        {customer.customerName} - {customer.customerPhone}
+                        {customer.customerName} - {customer.customerPhone || "No number"}
                       </div>
                     ))
                   ) : (
@@ -528,7 +542,14 @@ const POSBilling = () => {
           </div>
           <div className="flex justify-between font-bold mb-4">
             <span>Remaining Amount to be Paid:</span>
-            <span>Rs {remainingAmount()}</span>
+            <span style={{ color: remainingAmount() < 0 ? 'red' : 'inherit' }}>
+              Rs {remainingAmount()}
+              {remainingAmount() < 0 && customerName === "Cash" && (
+                <span style={{ color: 'red', fontSize: '0.8rem', display: 'block' }}>
+                  Cannot process credit sales to Cash customer
+                </span>
+              )}
+            </span>
           </div>
 
           {/* Action Buttons */}
@@ -613,7 +634,6 @@ const POSBilling = () => {
               </table>
 
               <div style={{ textAlign: 'right', marginTop: 20 }}>
-
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ marginRight: 10 }}>Total Amount:</span>
                   <strong>Rs {calculateTotal()}</strong>

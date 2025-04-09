@@ -1,12 +1,13 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { DeleteOutlined, EditOutlined, FilterOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Modal, Table, message, Card, Row, Col } from 'antd';
 import Layout from '../../components/Layout';
 
 const Customers = () => {
   const dispatch = useDispatch();
+  const [form] = Form.useForm();
 
   // State variables
   const [customerData, setCustomerData] = useState([]);
@@ -26,8 +27,16 @@ const Customers = () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
       const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/customers/getcustomers');
-      setCustomerData(data);
-      setFilteredData(data);
+      
+      // Ensure empty strings if phone/address are missing
+      const normalizedData = data.map(customer => ({
+        ...customer,
+        customerPhone: customer.customerPhone || '',
+        customerAddress: customer.customerAddress || ''
+      }));
+      
+      setCustomerData(normalizedData);
+      setFilteredData(normalizedData);
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
@@ -36,18 +45,21 @@ const Customers = () => {
     }
   };
 
-  // Apply filters whenever filter state or customer data changes
+  // Apply filters
   useEffect(() => {
     handleFilter();
   }, [filter, customerData]);
 
-  // Filter function
+  // Filter function (includes customers with missing phone numbers)
   const handleFilter = () => {
     const filtered = customerData.filter((customer) => {
-      return (
-        customer.customerName.toLowerCase().includes(filter.customerName.toLowerCase()) &&
-        customer.customerPhone.includes(filter.customerPhone)
-      );
+      const nameMatch = customer.customerName.toLowerCase().includes(filter.customerName.toLowerCase());
+      const phoneMatch = 
+        filter.customerPhone === '' || 
+        !customer.customerPhone || 
+        customer.customerPhone.includes(filter.customerPhone);
+      
+      return nameMatch && phoneMatch;
     });
     setFilteredData(filtered);
   };
@@ -60,7 +72,7 @@ const Customers = () => {
     });
   };
 
-  // Fetch customers when the component mounts
+  // Fetch customers on mount
   useEffect(() => {
     getAllCustomers();
   }, []);
@@ -80,10 +92,23 @@ const Customers = () => {
     }
   };
 
-  // Handle form submission for adding or editing a customer
+  // Handle form submission
   const handlerSubmit = async (values) => {
     try {
+      // Special case: Only "Cash" can skip phone/address
+      if (values.customerName.toLowerCase() !== "cash") {
+        if (!values.customerPhone) {
+          message.error("Contact number is required for non-Cash customers");
+          return;
+        }
+        if (!values.customerAddress) {
+          message.error("Address is required for non-Cash customers");
+          return;
+        }
+      }
+
       dispatch({ type: 'SHOW_LOADING' });
+      
       if (editCustomer) {
         await axios.put(`https://senuri-auto-server.onrender.com/api/customers/updatecustomer/${editCustomer._id}`, values);
         message.success('Customer Updated Successfully!');
@@ -91,6 +116,7 @@ const Customers = () => {
         await axios.post('https://senuri-auto-server.onrender.com/api/customers/addcustomer', values);
         message.success('Customer Added Successfully!');
       }
+      
       setPopModal(false);
       setEditCustomer(null);
       getAllCustomers();
@@ -102,7 +128,7 @@ const Customers = () => {
     }
   };
 
-  // Define table columns
+  // Table columns
   const columns = [
     {
       title: 'Customer Name',
@@ -111,10 +137,12 @@ const Customers = () => {
     {
       title: 'Contact Number',
       dataIndex: 'customerPhone',
+      render: (text) => text || 'N/A',
     },
     {
       title: 'Customer Address',
       dataIndex: 'customerAddress',
+      render: (text) => text || 'N/A',
     },
     {
       title: 'Action',
@@ -145,29 +173,23 @@ const Customers = () => {
       </Button>
 
       {/* Filter Section */}
-      <Card
-       
-        style={{ marginBottom: 20 }}
-        bordered={false}
-      >
+      <Card style={{ marginBottom: 20 }} bordered={false}>
         <Row gutter={16} align="middle">
           <Col xs={24} sm={12} md={10}>
-           
             <label>Customer Name</label>
-              <Input
-                placeholder="Filter by name"
-                value={filter.customerName}
-                onChange={(e) => setFilter({ ...filter, customerName: e.target.value })}
-              />
-            
+            <Input
+              placeholder="Filter by name"
+              value={filter.customerName}
+              onChange={(e) => setFilter({ ...filter, customerName: e.target.value })}
+            />
           </Col>
           <Col xs={24} sm={12} md={10}>
             <label>Contact Number</label>
-              <Input
-                placeholder="Filter by phone"
-                value={filter.customerPhone}
-                onChange={(e) => setFilter({ ...filter, customerPhone: e.target.value })}
-              />
+            <Input
+              placeholder="Filter by phone"
+              value={filter.customerPhone}
+              onChange={(e) => setFilter({ ...filter, customerPhone: e.target.value })}
+            />
           </Col>
           <Col xs={24} sm={24} md={4}>
             <Button
@@ -182,8 +204,6 @@ const Customers = () => {
         </Row>
       </Card>
 
-      
-
       <Table
         dataSource={filteredData}
         columns={columns}
@@ -193,51 +213,75 @@ const Customers = () => {
         style={{ marginTop: '20px' }}
       />
 
-      {popModal && (
-        <Modal
-          title={editCustomer ? 'Edit Customer' : 'Add New Customer'}
-          visible={popModal}
-          onCancel={() => {
-            setEditCustomer(null);
-            setPopModal(false);
-          }}
-          footer={null}
-          destroyOnClose
+      {/* Add/Edit Customer Modal */}
+      <Modal
+        title={editCustomer ? 'Edit Customer' : 'Add New Customer'}
+        visible={popModal}
+        onCancel={() => {
+          setEditCustomer(null);
+          setPopModal(false);
+          form.resetFields();
+        }}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={editCustomer || {}}
+          onFinish={handlerSubmit}
         >
-          <Form
-            layout="vertical"
-            initialValues={editCustomer || {}}
-            onFinish={handlerSubmit}
+          <Form.Item
+            name="customerName"
+            label="Customer Name"
+            rules={[{ required: true, message: 'Please enter customer name' }]}
           >
-            <Form.Item
-              name="customerName"
-              label="Customer Name"
-              rules={[{ required: true, message: 'Please enter customer name' }]}
-            >
-              <Input placeholder="Enter customer name" />
-            </Form.Item>
-            <Form.Item
-              name="customerPhone"
-              label="Contact Number"
-              rules={[{ required: true, message: 'Please enter contact number' }]}
-            >
-              <Input placeholder="Enter contact number" />
-            </Form.Item>
-            <Form.Item
-              name="customerAddress"
-              label="Customer Address"
-              rules={[{ required: true, message: 'Please enter customer address' }]}
-            >
-              <Input placeholder="Enter customer address" />
-            </Form.Item>
-            <div style={{ textAlign: 'right' }}>
-              <Button type="primary" htmlType="submit">
-                {editCustomer ? 'Update' : 'Add'}
-              </Button>
-            </div>
-          </Form>
-        </Modal>
-      )}
+            <Input placeholder="Enter customer name" />
+          </Form.Item>
+
+          <Form.Item
+            name="customerPhone"
+            label="Contact Number"
+            rules={[
+              {
+                validator: (_, value) => {
+                  const customerName = form.getFieldValue('customerName') || '';
+                  if (customerName.toLowerCase() !== "cash" && !value) {
+                    return Promise.reject('Contact number is required (except for Cash)');
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input placeholder={form.getFieldValue('customerName')?.toLowerCase() === "cash" ? "Optional for Cash" : "Required"} />
+          </Form.Item>
+
+          <Form.Item
+            name="customerAddress"
+            label="Customer Address"
+            rules={[
+              {
+                validator: (_, value) => {
+                  const customerName = form.getFieldValue('customerName') || '';
+                  if (customerName.toLowerCase() !== "cash" && !value) {
+                    return Promise.reject('Address is required (except for Cash)');
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input placeholder={form.getFieldValue('customerName')?.toLowerCase() === "cash" ? "Optional for Cash" : "Required"} />
+          </Form.Item>
+
+          <div style={{ textAlign: 'right' }}>
+            <Button type="primary" htmlType="submit">
+              {editCustomer ? 'Update' : 'Add'}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </Layout>
   );
 };

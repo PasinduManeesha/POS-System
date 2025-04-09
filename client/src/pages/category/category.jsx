@@ -1,18 +1,19 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { DeleteOutlined, EditOutlined, FilterOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Modal, Table, message, Card, Row, Col } from 'antd';
 import Layout from '../../components/Layout';
 
 const Category = () => {
   const dispatch = useDispatch();
+  const [form] = Form.useForm();
 
   // State variables
   const [categoryData, setCategoryData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [popModal, setPopModal] = useState(false);
-  const [editCategory, setEditCategory] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Filter state
@@ -20,8 +21,8 @@ const Category = () => {
     categoryName: ''
   });
 
-  // Fetch all categories from the API
-  const getAllCategory = async () => {
+  // Fetch all categories
+  const getAllCategories = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
       const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/categories/');
@@ -30,73 +31,94 @@ const Category = () => {
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
-      console.log(error);
+      console.error(error);
       message.error('Failed to fetch categories');
     }
   };
 
-  // Apply filters whenever filter state or category data changes
+  // Apply filters
   useEffect(() => {
-    handleFilter();
+    const filtered = categoryData.filter(category => 
+      category.categoryName.toLowerCase().includes(filter.categoryName.toLowerCase())
+    );
+    setFilteredData(filtered);
   }, [filter, categoryData]);
 
-  // Filter function
-  const handleFilter = () => {
-    const filtered = categoryData.filter((category) => {
-      return (
-        category.categoryName.toLowerCase().includes(filter.categoryName.toLowerCase())
-      );
-    });
-    setFilteredData(filtered);
-  };
-
-  // Reset filters
-  const handleResetFilters = () => {
-    setFilter({
-      categoryName: ''
-    });
-  };
-
-  // Fetch categories when the component mounts
+  // Initial data fetch
   useEffect(() => {
-    getAllCategory();
+    getAllCategories();
   }, []);
 
-  // Delete a category
-  const handlerDelete = async (record) => {
+  // Handle modal open for adding new category
+  const showAddModal = () => {
+    setEditingCategory(null);
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  // Handle modal open for editing
+  const showEditModal = (record) => {
+    setEditingCategory(record);
+    form.setFieldsValue(record);
+    setIsModalVisible(true);
+  };
+
+  // Handle modal close
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
+  };
+
+  // Handle form submission
+  const handleSubmit = async (values) => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      await axios.delete(`https://senuri-auto-server.onrender.com/api/categories/${record._id}`);
-      message.success('Category deleted successfully!');
-      getAllCategory();
+      
+      if (editingCategory) {
+        await axios.put(
+          `https://senuri-auto-server.onrender.com/api/categories/${editingCategory._id}`,
+          values
+        );
+        message.success('Category updated successfully!');
+      } else {
+        await axios.post(
+          'https://senuri-auto-server.onrender.com/api/categories/',
+          values
+        );
+        message.success('Category added successfully!');
+      }
+      
+      setIsModalVisible(false);
+      form.resetFields();
+      getAllCategories();
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error(error);
+      message.error('Operation failed');
+    } finally {
+      dispatch({ type: 'HIDE_LOADING' });
+    }
+  };
+
+  // Handle category deletion
+  const handleDelete = async (record) => {
+    try {
+      dispatch({ type: 'SHOW_LOADING' });
+      await axios.delete(
+        `https://senuri-auto-server.onrender.com/api/categories/${record._id}`
+      );
+      message.success('Category deleted successfully!');
+      getAllCategories();
+    } catch (error) {
+      console.error(error);
       message.error('Failed to delete category');
     } finally {
       dispatch({ type: 'HIDE_LOADING' });
     }
   };
 
-  // Handle form submission
-  const handlerSubmit = async (values) => {
-    try {
-      dispatch({ type: 'SHOW_LOADING' });
-      if (editCategory) {
-        await axios.put(`https://senuri-auto-server.onrender.com/api/categories/${editCategory._id}`, values);
-        message.success('Category updated successfully!');
-      } else {
-        await axios.post('https://senuri-auto-server.onrender.com/api/categories/', values);
-        message.success('Category added successfully!');
-      }
-      setPopModal(false);
-      setEditCategory(null);
-      getAllCategory();
-      dispatch({ type: 'HIDE_LOADING' });
-    } catch (error) {
-      dispatch({ type: 'HIDE_LOADING' });
-      console.log(error);
-      message.error('Operation failed');
-    }
+  // Reset filters
+  const resetFilters = () => {
+    setFilter({ categoryName: '' });
   };
 
   // Table columns
@@ -106,20 +128,17 @@ const Category = () => {
       dataIndex: 'categoryName',
     },
     {
-      title: 'Action',
+      title: 'Actions',
       dataIndex: '_id',
       render: (id, record) => (
         <div style={{ display: 'flex', gap: '10px' }}>
           <DeleteOutlined
-            style={{ cursor: 'pointer', color: 'red' }}
-            onClick={() => handlerDelete(record)}
+            style={{ color: 'red', cursor: 'pointer' }}
+            onClick={() => handleDelete(record)}
           />
           <EditOutlined
-            style={{ cursor: 'pointer', color: 'blue' }}
-            onClick={() => {
-              setEditCategory(record);
-              setPopModal(true);
-            }}
+            style={{ color: 'blue', cursor: 'pointer' }}
+            onClick={() => showEditModal(record)}
           />
         </div>
       ),
@@ -130,63 +149,50 @@ const Category = () => {
     <Layout>
       <h2>All Categories</h2>
       
-      <Button className="add-new" onClick={() => setPopModal(true)}>
+      <Button  className="add-new" onClick={showAddModal} style={{ marginBottom: 16 }}>
         Add New Category
       </Button>
 
       {/* Filter Section */}
-      <Card
-        
-        style={{ marginBottom: 20 }}
-        bordered={false}
-      >
+      <Card style={{ marginBottom: 20 }}>
         <Row gutter={16} align="middle">
           <Col xs={24} sm={18} md={10}>
-            <label>Category Name</label>
+            <Form.Item label="Filter by Category Name">
               <Input
-                placeholder="Filter by category name"
+                placeholder="Enter category name"
                 value={filter.categoryName}
                 onChange={(e) => setFilter({ ...filter, categoryName: e.target.value })}
               />
+            </Form.Item>
           </Col>
           <Col xs={24} sm={6} md={4}>
-            <Button
-              type="default"
-              onClick={handleResetFilters}
-              style={{ marginTop: 20 }}
-              block
-            >
+            <Button onClick={resetFilters} block>
               Reset Filters
             </Button>
           </Col>
         </Row>
       </Card>
 
-
       <Table
-        dataSource={filteredData}
         columns={columns}
-        bordered
+        dataSource={filteredData}
         rowKey="_id"
         loading={loading}
-        style={{ marginTop: '20px' }}
+        bordered
       />
 
+      {/* Add/Edit Modal */}
       <Modal
-        title={editCategory ? 'Edit Category' : 'Add New Category'}
-        open={popModal}
-        onCancel={() => {
-          setEditCategory(null);
-          setPopModal(false);
-        }}
+        title={editingCategory ? 'Edit Category' : 'Add New Category'}
+        visible={isModalVisible}
+        onCancel={handleCancel}
         footer={null}
         destroyOnClose
       >
         <Form
+          form={form}
           layout="vertical"
-          initialValues={editCategory || {}}
-          onFinish={handlerSubmit}
-          preserve={false}
+          onFinish={handleSubmit}
         >
           <Form.Item
             name="categoryName"
@@ -195,11 +201,12 @@ const Category = () => {
           >
             <Input placeholder="Enter category name" />
           </Form.Item>
-          <div style={{ textAlign: 'right' }}>
-            <Button type="primary" htmlType="submit">
-              {editCategory ? 'Update' : 'Add'}
+          
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              {editingCategory ? 'Update' : 'Add'}
             </Button>
-          </div>
+          </Form.Item>
         </Form>
       </Modal>
     </Layout>

@@ -4,13 +4,15 @@ import LayoutApp from '../../components/Layout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./home.css";
 import axios from "axios";
-import { message } from "antd";
+import { message, Modal, Table, Tag } from "antd";
+import moment from "moment";
 
 const POSBilling = () => {
   // State variables
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [customerNumber, setCustomerNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerId, setCustomerId] = useState(null);
   const [date] = useState(new Date().toISOString().split("T")[0]);
   const [newProduct, setNewProduct] = useState({
     productNo: "",
@@ -20,7 +22,7 @@ const POSBilling = () => {
     cost: "",
   });
   const [editingIndex, setEditingIndex] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [amountPaid, setAmountPaid] = useState("");
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
@@ -31,6 +33,8 @@ const POSBilling = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [isTypingProductNumber, setIsTypingProductNumber] = useState(false);
+  const [customerBalance, setCustomerBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Refs
   const componentRef = useRef();
@@ -48,8 +52,11 @@ const POSBilling = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const customersRes = await axios.get("https://senuri-auto-server.onrender.com/api/customers/getcustomers");
-        const productsRes = await axios.get("https://senuri-auto-server.onrender.com/api/products/getproducts");
+        setIsLoading(true);
+        const [customersRes, productsRes] = await Promise.all([
+          axios.get("https://senuri-auto-server.onrender.com/api/customers/getcustomers"),
+          axios.get("https://senuri-auto-server.onrender.com/api/products/getproducts")
+        ]);
         setCustomers(customersRes.data);
         setAllProducts(productsRes.data);
         
@@ -57,10 +64,13 @@ const POSBilling = () => {
         const cashCustomer = customersRes.data.find(c => c.customerName === "Cash");
         if (cashCustomer) {
           setCustomerName("Cash");
-          // No need to set customer number for Cash customer
+          setCustomerId(cashCustomer._id);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        message.error("Failed to load initial data");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
@@ -99,6 +109,7 @@ const POSBilling = () => {
   const selectCustomer = (customer) => {
     setCustomerNumber(customer.customerPhone || "");
     setCustomerName(customer.customerName);
+    setCustomerId(customer._id);
     setShowCustomerDropdown(false);
   };
 
@@ -157,13 +168,17 @@ const POSBilling = () => {
       !newProduct.unitPrice ||
       !newProduct.quantity
     ) {
-      alert("Please fill in all product details before adding to the cart.");
+      message.error("Please fill in all product details before adding to the cart.");
       return;
     }
 
     const productWithCost = {
       ...newProduct,
-      totalCost: newProduct.cost * newProduct.quantity
+      unitPrice: parseFloat(newProduct.unitPrice),
+      quantity: parseInt(newProduct.quantity),
+      cost: parseFloat(newProduct.cost || 0),
+      totalCost: (parseFloat(newProduct.cost || 0) * parseInt(newProduct.quantity)),
+      profit: ((parseFloat(newProduct.unitPrice) - parseFloat(newProduct.cost || 0)) * parseInt(newProduct.quantity))
     };
 
     if (editingIndex !== null) {
@@ -204,7 +219,7 @@ const POSBilling = () => {
   // Calculation functions
   const calculateTotal = () => {
     return selectedProducts
-      .reduce((total, product) => total + product.unitPrice * product.quantity, 0)
+      .reduce((total, product) => total + (product.unitPrice * product.quantity), 0)
       .toFixed(2);
   };
 
@@ -215,11 +230,15 @@ const POSBilling = () => {
   };
 
   const calculateProfit = () => {
-    return (calculateTotal() - calculateTotalCost()).toFixed(2);
+    return (parseFloat(calculateTotal()) - parseFloat(calculateTotalCost())).toFixed(2);
   };
 
   const remainingAmount = () => {
-    return (amountPaid - calculateTotal()).toFixed(2);
+    return (parseFloat(amountPaid || 0) - parseFloat(calculateTotal())).toFixed(2);
+  };
+
+  const totalPayable = () => {
+    return calculateTotal();
   };
 
   // Print handling
@@ -255,64 +274,112 @@ const POSBilling = () => {
   // Function to save the bill
   const saveBill = async () => {
     try {
+      setIsLoading(true);
+      
       // Validate customer details
       if (!customerName) {
         message.error("Please enter customer details before saving the bill.");
         return;
       }
       
-      // If remaining amount is negative (credit sale) and customer is Cash or doesn't have number
-      const remaining = remainingAmount();
-      if (remaining < 0 && (customerName === "Cash" || !customerNumber)) {
-        message.error("Cannot process credit sales to 'Cash' customer or without valid customer details. Please select a registered customer with contact number.");
-        return;
-      }
-
-      // Validate cart items
-      if (selectedProducts.length === 0) {
-        message.error("Please add at least one product to the cart.");
-        return;
-      }
-
-      const subTotal = calculateTotal();
-      const tax = Number(((subTotal / 100) * 0).toFixed(2)); // Assuming 0% tax (adjust as needed)
-      const totalAmount = Number((Number(subTotal) + tax).toFixed(2));
-      const totalCost = calculateTotalCost();
-
-      // Calculate profit
-      const profit = totalAmount - totalCost;
-
+      // Calculate amounts
+      const subTotal = parseFloat(calculateTotal());
+      const remaining = parseFloat(remainingAmount());
+      const isCreditSale = remaining < 0;
+      const creditAmount = isCreditSale ? Math.abs(remaining) : 0;
+  
+      // Prepare bill data (always save the actual remaining amount, positive or negative)
       const billData = {
         invoiceNumber,
+        customer: customerId || null,
         customerName,
-        customerPhone: customerNumber || "N/A", // Handle Cash customer case
+        customerPhone: customerNumber || "N/A",
         customerAddress: "N/A",
         subTotal,
-        tax,
-        totalAmount,
-        totalCost,
-        profit, // Include profit in the bill data
+        tax: 0,
+        totalAmount: subTotal,
+        totalCost: parseFloat(calculateTotalCost()),
+        profit: subTotal - parseFloat(calculateTotalCost()),
+        paymentMethod,
+        amountPaid: parseFloat(amountPaid || 0),
+        remainingAmount: remaining, // Keep the original value (positive or negative)
+        creditAmount,
+        isCredit: isCreditSale,
         cartItems: selectedProducts.map(item => ({
           productNo: item.productNo,
           itemDescription: item.itemDescription,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
           cost: item.cost,
-          totalItemCost: item.cost * item.quantity
+          totalItemCost: item.cost * item.quantity,
+          profit: (item.unitPrice - item.cost) * item.quantity
         })),
         createdAt: new Date(),
       };
-
-      console.log("Data being sent to the backend:", billData);
-
-      await axios.post("https://senuri-auto-server.onrender.com/api/bills/addbills", billData);
-      message.success("Bill Generated!");
-
-      // Print the bill after it is successfully saved
+  
+      // 1. Always save the bill first
+      const response = await axios.post(
+        "/api/bills/addbills", 
+        billData
+      );
+  
+      // 2. If this is a credit sale (remaining < 0) and not a Cash customer, update customer's credit
+      if (isCreditSale && customerId && customerName !== "Cash") {
+        try {
+          await axios.post(
+            `/api/customers/${customerId}/payments`,
+            {
+              amount: creditAmount,
+              billId: response.data._id,
+              description: `Credit sale INV-${invoiceNumber}`,
+              type: 'credit'  // Explicitly mark as credit transaction
+            }
+          );
+          
+          // Refresh customer balance
+          const balanceResponse = await axios.get(
+            `/api/customers/${customerId}/balance`
+          );
+          setCustomerBalance(balanceResponse.data.balance || 0);
+        } catch (error) {
+          console.error("Error updating customer credit:", error);
+          message.warning("Bill saved but failed to update customer credit balance");
+        }
+      }
+  
+      // 3. Always print the bill (regardless of payment status)
       handlePrint();
+  
+      // Show appropriate success message
+      if (isCreditSale && customerName !== "Cash") {
+        message.success(
+          `Credit sale recorded! New outstanding balance: Rs ${(parseFloat(customerBalance) + creditAmount).toFixed(2)}`
+        );
+      } else {
+        message.success("Bill generated successfully!");
+      }
+  
+      // Reset form for next bill (keep customer info)
+      const randomNumber = Math.floor(Math.random() * 100000);
+      setInvoiceNumber(randomNumber.toString().padStart(5, "0"));
+      setSelectedProducts([]);
+      setAmountPaid("");
+      setNewProduct({
+        productNo: "",
+        itemDescription: "",
+        unitPrice: "",
+        quantity: "",
+        cost: ""
+      });
+  
     } catch (error) {
-      message.error("Error generating bill!");
-      console.error("Error response from backend:", error.response?.data || error.message);
+      console.error("Error generating bill:", error);
+      message.error(
+        error.response?.data?.message || 
+        "Failed to generate bill. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -326,11 +393,21 @@ const POSBilling = () => {
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Invoice Number</label>
-              <input type="text" value={`INV-${invoiceNumber}`} readOnly className="mt-1 block w-full border p-2" />
+              <input 
+                type="text" 
+                value={`INV-${invoiceNumber}`} 
+                readOnly 
+                className="mt-1 block w-full border p-2" 
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Date</label>
-              <input type="date" value={date} readOnly className="mt-1 block w-full border p-2" />
+              <input 
+                type="date" 
+                value={date} 
+                readOnly 
+                className="mt-1 block w-full border p-2" 
+              />
             </div>
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700">Customer Number</label>
@@ -410,6 +487,7 @@ const POSBilling = () => {
                         onMouseDown={() => selectProduct(product)}
                       >
                         {product.productNo} - {product.name}
+                        <span className="float-right">Rs {product.price.toFixed(2)}</span>
                       </div>
                     ))
                   ) : (
@@ -439,6 +517,7 @@ const POSBilling = () => {
                       onMouseDown={() => selectProduct(product)}
                     >
                       {product.name} - {product.productNo}
+                      <span className="float-right">Rs {product.price.toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -460,18 +539,23 @@ const POSBilling = () => {
                 value={newProduct.quantity}
                 onChange={(e) => setNewProduct(prev => ({
                   ...prev,
-                  quantity: Number(e.target.value)
+                  quantity: e.target.value
                 }))}
                 className="mt-1 block w-full border p-2"
+                min="1"
               />
             </div>
           </div>
-          <button onClick={addProduct} className="mt-2 add-to-cart-btn bg-blue-500 text-white p-2 addToCardBtn rounded">
+          <button 
+            onClick={addProduct} 
+            className="mt-2 add-to-cart-btn bg-blue-500 text-white p-2 addToCardBtn rounded"
+            disabled={isLoading}
+          >
             {editingIndex !== null ? "Update Product" : "Add to Cart"}
           </button>
 
           {/* Products Table */}
-          <div className="table-container relative z-10">
+          <div className="table-container relative z-10 mt-4">
             <table className="w-full border mb-4">
               <thead>
                 <tr className="bg-gray-200">
@@ -484,29 +568,37 @@ const POSBilling = () => {
                 </tr>
               </thead>
               <tbody>
-                {selectedProducts.map((product, index) => (
-                  <tr key={index}>
-                    <td className="border p-2">{product.productNo}</td>
-                    <td className="border p-2">{product.itemDescription}</td>
-                    <td className="border p-2">Rs {product.unitPrice}</td>
-                    <td className="border p-2">{product.quantity}</td>
-                    <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
-                    <td className="border p-2">
-                      <button
-                        onClick={() => editProduct(index)}
-                        className="bg-green-700 text-black p-2   edit-btn rounded mr-2 hover:bg-yellow-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => removeProduct(index)}
-                        className="bg-red-500 text-black p-2 remove-btn  rounded hover:bg-red-600"
-                      >
-                        Remove
-                      </button>
+                {selectedProducts.length > 0 ? (
+                  selectedProducts.map((product, index) => (
+                    <tr key={index}>
+                      <td className="border p-2">{product.productNo}</td>
+                      <td className="border p-2">{product.itemDescription}</td>
+                      <td className="border p-2">Rs {product.unitPrice.toFixed(2)}</td>
+                      <td className="border p-2">{product.quantity}</td>
+                      <td className="border p-2">Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
+                      <td className="border p-2">
+                        <button
+                          onClick={() => editProduct(index)}
+                          className="bg-yellow-500 text-black p-2 edit-btn rounded mr-2 hover:bg-yellow-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => removeProduct(index)}
+                          className="bg-red-500 text-black p-2 remove-btn rounded hover:bg-red-600"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="border p-2 text-center text-gray-500">
+                      No products added to cart
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -520,8 +612,10 @@ const POSBilling = () => {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="mt-1 block w-full border p-2"
               >
-                <option value="Cash on Delivery">Cash</option>
-                <option value="Credit Card Payment">Credit Card Payment</option>
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Other">Other</option>
               </select>
             </div>
             <div>
@@ -531,34 +625,43 @@ const POSBilling = () => {
                 value={amountPaid}
                 onChange={(e) => setAmountPaid(e.target.value)}
                 className="mt-1 block w-full border p-2"
+                min="0"
+                step="0.01"
               />
             </div>
           </div>
 
           {/* Totals Section */}
-          <div className="flex justify-between font-bold mb-4">
-            <span>Total Value:</span>
-            <span>Rs {calculateTotal()}</span>
-          </div>
-          <div className="flex justify-between font-bold mb-4">
-            <span>Remaining Amount to be Paid:</span>
-            <span style={{ color: remainingAmount() < 0 ? 'red' : 'inherit' }}>
-              Rs {remainingAmount()}
-              {remainingAmount() < 0 && customerName === "Cash" && (
-                <span style={{ color: 'red', fontSize: '0.8rem', display: 'block' }}>
-                  Cannot process credit sales to Cash customer
-                </span>
-              )}
-            </span>
+          <div className="bg-gray-100 p-4 rounded-lg mb-4">
+            <div className="flex justify-between font-bold mb-2">
+              <span>Subtotal:</span>
+              <span>Rs {calculateTotal()}</span>
+            </div>
+            <div className="flex justify-between font-bold mb-2">
+              <span>Total Payable:</span>
+              <span>Rs {totalPayable()}</span>
+            </div>
+            <div className="flex justify-between font-bold mb-2">
+              <span>Amount Paid:</span>
+              <span>Rs {amountPaid || '0.00'}</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>Remaining Amount:</span>
+              <span style={{ color: remainingAmount() < 0 ? 'red' : 'inherit' }}>
+                Rs {Math.abs(remainingAmount()).toFixed(2)}
+                {remainingAmount() < 0 ? ' (Credit)' : ''}
+              </span>
+            </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex justify-between">
             <button
-              className="bg-green-500 bill-btn text-blck p-2 rounded hover:bg-green-600"
+              className="bg-green-500 bill-btn text-bla p-2 rounded hover:bg-green-600"
               onClick={saveBill}
+              disabled={isLoading || selectedProducts.length === 0}
             >
-              Bill Print
+              {isLoading ? 'Processing...' : 'Generate Bill'}
             </button>
             <button
               className="bg-red-500 clear-btn text-black p-2 rounded hover:bg-red-600"
@@ -569,7 +672,6 @@ const POSBilling = () => {
 
                 // Clear all form fields
                 setSelectedProducts([]);
-                setCustomerName("");
                 setCustomerNumber("");
                 setAmountPaid("");
                 setNewProduct({
@@ -597,12 +699,22 @@ const POSBilling = () => {
           {/* Printable Invoice Section - Hidden until printed */}
           <div style={{ display: "none" }}>
             <div id="print-content" ref={componentRef} style={{ padding: 20 }}>
-              <h2 style={{ textAlign: 'center', marginBottom: 20 }}>INVOICE</h2>
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <h2 style={{ fontSize: 24, fontWeight: 'bold' }}>INVOICE</h2>
+                <p style={{ fontSize: 14 }}>Senuri Auto</p>
+                <p style={{ fontSize: 12 }}>Business Address | Phone Number</p>
+              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginBottom: 20,
+                borderBottom: '1px solid #ddd',
+                paddingBottom: 10
+              }}>
                 <div>
                   <p><strong>Invoice No:</strong> INV-{invoiceNumber}</p>
-                  <p><strong>Date:</strong> {date}</p>
+                  <p><strong>Date:</strong> {moment(date).format('DD/MM/YYYY')}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <p><strong>Customer:</strong> {customerName || 'N/A'}</p>
@@ -610,12 +722,17 @@ const POSBilling = () => {
                 </div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+              <table style={{ 
+                width: '100%', 
+                borderCollapse: 'collapse', 
+                marginBottom: 20,
+                border: '1px solid #ddd'
+              }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f0f0f0' }}>
-                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>Product No</th>
-                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>Item Description</th>
-                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Unit Price</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>#</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>Description</th>
+                    <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Price</th>
                     <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>Qty</th>
                     <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Total</th>
                   </tr>
@@ -623,37 +740,64 @@ const POSBilling = () => {
                 <tbody>
                   {selectedProducts.map((product, index) => (
                     <tr key={index}>
-                      <td style={{ padding: 8, border: '1px solid #ddd' }}>{product.productNo}</td>
-                      <td style={{ padding: 8, border: '1px solid #ddd' }}>{product.itemDescription}</td>
-                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Rs {product.unitPrice?.toFixed(2) || '0.00'}</td>
-                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>{product.quantity || 0}</td>
-                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>Rs {(product.unitPrice * product.quantity).toFixed(2)}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd' }}>{index + 1}</td>
+                      <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                        {product.itemDescription} ({product.productNo})
+                      </td>
+                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>
+                        Rs {product.unitPrice?.toFixed(2) || '0.00'}
+                      </td>
+                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>
+                        {product.quantity || 0}
+                      </td>
+                      <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>
+                        Rs {(product.unitPrice * product.quantity).toFixed(2)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              <div style={{ textAlign: 'right', marginTop: 20 }}>
+              <div style={{ 
+                textAlign: 'right', 
+                marginTop: 20,
+                borderTop: '1px solid #ddd',
+                paddingTop: 10
+              }}>
                 <div style={{ marginBottom: 8 }}>
-                  <span style={{ marginRight: 10 }}>Total Amount:</span>
+                  <span style={{ marginRight: 10 }}>Subtotal:</span>
                   <strong>Rs {calculateTotal()}</strong>
                 </div>
-                {amountPaid && (
-                  <>
-                    <div style={{ marginBottom: 8 }}>
-                      <span style={{ marginRight: 10 }}>Amount Paid:</span>
-                      <strong>Rs {amountPaid}.00</strong>
-                    </div>
-                    <div style={{ marginBottom: 8 }}>
-                      <span style={{ marginRight: 10 }}>Remaining Amount:</span>
-                      <strong>Rs {remainingAmount()}</strong>
-                    </div>
-                  </>
-                )}
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Total Payable:</span>
+                  <strong>Rs {totalPayable()}</strong>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Amount Paid:</span>
+                  <strong>Rs {amountPaid || '0.00'}</strong>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Remaining Amount:</span>
+                  <strong style={{ color: remainingAmount() < 0 ? 'red' : 'inherit' }}>
+                    Rs {Math.abs(remainingAmount()).toFixed(2)}
+                    {remainingAmount() < 0 ? ' (Credit)' : ''}
+                  </strong>
+                </div>
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ marginRight: 10 }}>Payment Method:</span>
+                  <strong>{paymentMethod}</strong>
+                </div>
               </div>
 
-              <div style={{ marginTop: 30, textAlign: 'center', fontStyle: 'italic' }}>
-                Thank you for your business!
+              <div style={{ 
+                marginTop: 30, 
+                textAlign: 'center', 
+                fontStyle: 'italic',
+                borderTop: '1px solid #ddd',
+                paddingTop: 20
+              }}>
+                <p>Thank you for your business!</p>
+                <p style={{ fontSize: 12 }}>Please retain this invoice for your records</p>
               </div>
             </div>
           </div>

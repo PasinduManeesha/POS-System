@@ -319,7 +319,7 @@ const POSBilling = () => {
   
       // 1. Always save the bill first
       const response = await axios.post(
-        "/api/bills/addbills", 
+        "https://senuri-auto-server.onrender.com/api/bills/addbills", 
         billData
       );
   
@@ -327,7 +327,7 @@ const POSBilling = () => {
       if (isCreditSale && customerId && customerName !== "Cash") {
         try {
           await axios.post(
-            `/api/customers/${customerId}/payments`,
+            `https://senuri-auto-server.onrender.com/api/customers/${customerId}/payments`,
             {
               amount: creditAmount,
               billId: response.data._id,
@@ -338,16 +338,16 @@ const POSBilling = () => {
           
           // Refresh customer balance
           const balanceResponse = await axios.get(
-            `/api/customers/${customerId}/balance`
+            `https://senuri-auto-server.onrender.com/api/customers/${customerId}/balance`
           );
           setCustomerBalance(balanceResponse.data.balance || 0);
         } catch (error) {
           console.error("Error updating customer credit:", error);
-          message.warning("Bill saved but failed to update customer credit balance");
+          // message.warning("Bill saved but failed to update customer credit balance");
         }
       }
   
-      // 3. Always print the bill (regardless of payment status)
+   
       handlePrint();
   
       // Show appropriate success message

@@ -35,13 +35,13 @@ const customerSchema = new mongoose.Schema({
         date: { 
             type: Date, 
             default: Date.now,
-            immutable: true // Prevent modification after creation
+            immutable: true 
         },
         billId: { 
             type: mongoose.Schema.Types.ObjectId, 
             ref: 'Bills',
             required: function() {
-                return this.type === 'credit'; // Required only for credit entries
+                return this.type === 'credit'; 
             }
         },
         amount: {
@@ -63,15 +63,15 @@ const customerSchema = new mongoose.Schema({
     }]
 }, { 
     timestamps: true,
-    toJSON: { virtuals: true }, // Include virtuals when converted to JSON
+    toJSON: { virtuals: true }, 
     toObject: { virtuals: true }
 });
 
-// Indexes (keeping your existing ones)
+
 customerSchema.index({ customerPhone: 1 }, { unique: true });
 customerSchema.index({ customerName: 'text' });
 
-// Virtual for formatted phone number
+
 customerSchema.virtual('formattedPhone').get(function() {
     return this.customerPhone?.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
 });

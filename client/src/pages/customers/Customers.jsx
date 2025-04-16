@@ -113,18 +113,30 @@ const Customers = () => {
         await axios.put(`https://senuri-auto-server.onrender.com/api/customers/updatecustomer/${editCustomer._id}`, values);
         message.success('Customer Updated Successfully!');
       } else {
+        // FIXED: Added full URL for the POST request
         await axios.post('https://senuri-auto-server.onrender.com/api/customers/addcustomer', values);
         message.success('Customer Added Successfully!');
       }
       
       setPopModal(false);
       setEditCustomer(null);
+      form.resetFields();
       getAllCustomers();
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
-      console.log(error);
-      message.error('Something went wrong');
+      console.log('Error:', error);
+      
+      // Improved error message
+      if (error.response) {
+        if (error.response.status === 409) {
+          message.error('Customer with this phone number already exists');
+        } else {
+          message.error(error.response.data.message || 'Failed to save customer');
+        }
+      } else {
+        message.error('Network error. Please check your connection.');
+      }
     }
   };
 
@@ -157,6 +169,7 @@ const Customers = () => {
             style={{ cursor: 'pointer', color: 'blue' }}
             onClick={() => {
               setEditCustomer(record);
+              form.setFieldsValue(record);
               setPopModal(true);
             }}
           />
@@ -168,7 +181,11 @@ const Customers = () => {
   return (
     <Layout>
       <h2>All Customers</h2>
-      <Button className="add-new" onClick={() => setPopModal(true)}>
+      <Button className="add-new" onClick={() => {
+        setEditCustomer(null);
+        form.resetFields();
+        setPopModal(true);
+      }}>
         Add New Customer
       </Button>
 

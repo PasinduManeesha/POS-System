@@ -1,4 +1,4 @@
-import { Button, Modal, Table, Input, Row, Col, Card } from 'antd';
+import { Button, Modal, Table, Input, Row, Col, Card, Tag } from 'antd';
 import axios from 'axios';
 import React, { useEffect, useState, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
@@ -150,11 +150,7 @@ const Bills = () => {
             <h2>All Invoices</h2>
 
             {/* Filter Section */}
-            <Card
-                
-                style={{ marginBottom: 20 }}
-                bordered={false}
-            >
+            <Card style={{ marginBottom: 20 }} bordered={false}>
                 <Row gutter={16}>
                     <Col xs={24} sm={12} md={8} lg={8}>
                         <div style={{ marginBottom: 16 }}>
@@ -200,7 +196,6 @@ const Bills = () => {
                         Reset Filters
                     </Button>
                 </Row>
-
             </Card>
 
             {/* Table Section */}
@@ -215,6 +210,7 @@ const Bills = () => {
                 }}
             />
 
+            {/* Bill Details Modal */}
             <Modal
                 title="Invoice Details"
                 width={800}
@@ -238,6 +234,12 @@ const Bills = () => {
                         </div>
                     </div>
 
+                    {selectedBill?.isCredit && (
+                        <div style={{ marginBottom: 10, textAlign: 'center' }}>
+                            <Tag color="orange">CREDIT SALE</Tag>
+                        </div>
+                    )}
+
                     <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
                         <thead>
                             <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -260,14 +262,28 @@ const Bills = () => {
                     </table>
 
                     <div style={{ textAlign: 'right', marginTop: 20 }}>
-                        {/* <div style={{ marginBottom: 8 }}>
+                        <div style={{ marginBottom: 8 }}>
                             <span style={{ marginRight: 10 }}>Sub Total:</span>
                             <strong>Rs {selectedBill?.subTotal?.toFixed(2) || '0.00'}</strong>
-                        </div> */}
-                        
+                        </div>
                         <div style={{ marginBottom: 8 }}>
                             <span style={{ marginRight: 10 }}>Total Amount:</span>
                             <strong>Rs {selectedBill?.totalAmount?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Amount Paid:</span>
+                            <strong>Rs {selectedBill?.amountPaid?.toFixed(2) || '0.00'}</strong>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Remaining Amount:</span>
+                            <strong style={{ color: selectedBill?.remainingAmount < 0 ? 'red' : 'inherit' }}>
+                                Rs {Math.abs(selectedBill?.remainingAmount || 0).toFixed(2)}
+                                {selectedBill?.remainingAmount < 0 ? ' (Credit)' : ''}
+                            </strong>
+                        </div>
+                        <div style={{ marginBottom: 8 }}>
+                            <span style={{ marginRight: 10 }}>Payment Method:</span>
+                            <strong>{selectedBill?.paymentMethod || 'N/A'}</strong>
                         </div>
                     </div>
 

@@ -95,6 +95,11 @@ const POSBilling = () => {
 
   // Customer handling functions
   const filterCustomers = (input) => {
+    if (!Array.isArray(customers)) {
+      console.error("Customers is not an array:", customers);
+      return;
+    }
+  
     if (isTypingCustomerNumber) {
       const filtered = customers.filter(customer =>
         customer.customerPhone && customer.customerPhone.includes(input)
@@ -102,7 +107,7 @@ const POSBilling = () => {
       setFilteredCustomers(filtered);
     } else {
       const filtered = customers.filter(customer =>
-        customer.customerName.toLowerCase().includes(input.toLowerCase())
+        customer.customerName && customer.customerName.toLowerCase().includes(input.toLowerCase())
       );
       setFilteredCustomers(filtered);
     }

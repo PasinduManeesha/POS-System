@@ -1,39 +1,38 @@
 import mongoose from "mongoose";
-import Counter from "./counterModel.js"; 
-
 
 const billSchema = new mongoose.Schema({
-  billNumber: {
-    type: Number,
-    unique: true,
-    index: true,
-  },
-  invoiceNumber: {
-    type: String,
-    required: true,
-  },
-  customerName: String,
-  customerPhone: String,
-  customerAddress: String,
-  subTotal: Number,
-  tax: Number,
-  totalAmount: Number, 
-  totalCost: Number,  
-  profit: Number,    
-  cartItems: [{
-    productNo: String,
-    itemDescription: String,
-    unitPrice: Number,
-    quantity: Number,
-    cost: Number, 
+    billNumber: { type: Number, unique: true, index: true },
+    invoiceNumber: { type: String, required: true },
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    customerName: String,
+    customerPhone: String,
+    customerAddress: String,
+    subTotal: Number,
+    tax: Number,
+    totalAmount: Number,
+    totalCost: Number,
     profit: Number,
-    totalItemCost: Number 
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+    paymentMethod: String,
+    amountPaid: { type: Number, default: 0 },
+    remainingAmount: { type: Number, default: 0 },
+    creditAmount: { type: Number, default: 0 },
+    isCredit: { type: Boolean, default: false },
+    cartItems: [{
+        productNo: String,
+        itemDescription: String,
+        unitPrice: Number,
+        quantity: Number,
+        cost: Number,
+        profit: Number,
+        totalItemCost: Number
+    }],
+    status: {
+        type: String,
+        enum: ['pending', 'completed', 'cancelled'],
+        default: 'completed'
+    }
+}, { timestamps: true });
+
 
 
 billSchema.pre("save", async function (next) {

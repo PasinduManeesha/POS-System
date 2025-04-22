@@ -28,20 +28,29 @@ const Customers = () => {
       dispatch({ type: 'SHOW_LOADING' });
       const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/customers/getcustomers');
       
-      // Ensure empty strings if phone/address are missing
-      const normalizedData = data.map(customer => ({
+      // Debugging: Log the raw response
+      console.log('API Response:', data);
+  
+      // Handle case where data might be nested in a response object
+      const customersArray = data.customers || data.data || data;
+      
+      if (!Array.isArray(customersArray)) {
+        throw new Error(`Expected array but got ${typeof customersArray}`);
+      }
+  
+      const normalizedData = customersArray.map(customer => ({
         ...customer,
         customerPhone: customer.customerPhone || '',
         customerAddress: customer.customerAddress || ''
       }));
-      
+  
       setCustomerData(normalizedData);
       setFilteredData(normalizedData);
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
-      console.log(error);
-      message.error('Failed to fetch customers');
+      console.error("Customer fetch error:", error);
+      message.error(error.message || 'Failed to fetch customers');
     }
   };
 
@@ -79,6 +88,11 @@ const Customers = () => {
 
   // Delete a customer
   const handlerDelete = async (record) => {
+    if (record.customerName.toLowerCase() === 'cash') {
+      message.error('Cannot delete the Cash customer');
+      return;
+    }
+
     try {
       dispatch({ type: 'SHOW_LOADING' });
       await axios.delete(`https://senuri-auto-server.onrender.com/api/customers/deletecustomer/${record._id}`);
@@ -107,6 +121,13 @@ const Customers = () => {
         }
       }
 
+      // Prevent editing the Cash customer's name
+      if (editCustomer && editCustomer.customerName.toLowerCase() === 'cash' && 
+          values.customerName.toLowerCase() !== 'cash') {
+        message.error('Cannot change the name of the Cash customer');
+        return;
+      }
+
       dispatch({ type: 'SHOW_LOADING' });
       
       if (editCustomer) {
@@ -119,12 +140,22 @@ const Customers = () => {
       
       setPopModal(false);
       setEditCustomer(null);
+      form.resetFields();
       getAllCustomers();
       dispatch({ type: 'HIDE_LOADING' });
     } catch (error) {
       dispatch({ type: 'HIDE_LOADING' });
-      console.log(error);
-      message.error('Something went wrong');
+      console.log('Error:', error);
+      
+      if (error.response) {
+        if (error.response.status === 409) {
+          message.error('Customer with this phone number already exists');
+        } else {
+          message.error(error.response.data.message || 'Failed to save customer');
+        }
+      } else {
+        message.error('Network error. Please check your connection.');
+      }
     }
   };
 
@@ -149,14 +180,24 @@ const Customers = () => {
       dataIndex: '_id',
       render: (id, record) => (
         <div style={{ display: 'flex', gap: '10px' }}>
-          <DeleteOutlined
-            style={{ cursor: 'pointer', color: 'red' }}
-            onClick={() => handlerDelete(record)}
-          />
+          {record.customerName.toLowerCase() !== 'cash' && (
+            <DeleteOutlined
+              style={{ cursor: 'pointer', color: 'red' }}
+              onClick={() => handlerDelete(record)}
+            />
+          )}
           <EditOutlined
-            style={{ cursor: 'pointer', color: 'blue' }}
+            style={{ 
+              cursor: record.customerName.toLowerCase() === 'cash' ? 'not-allowed' : 'pointer', 
+              color: record.customerName.toLowerCase() === 'cash' ? '#ccc' : 'blue' 
+            }}
             onClick={() => {
+              if (record.customerName.toLowerCase() === 'cash') {
+                message.info('Cash customer cannot be edited');
+                return;
+              }
               setEditCustomer(record);
+              form.setFieldsValue(record);
               setPopModal(true);
             }}
           />
@@ -168,7 +209,11 @@ const Customers = () => {
   return (
     <Layout>
       <h2>All Customers</h2>
-      <Button className="add-new" onClick={() => setPopModal(true)}>
+      <Button className="add-new" onClick={() => {
+        setEditCustomer(null);
+        form.resetFields();
+        setPopModal(true);
+      }}>
         Add New Customer
       </Button>
 
@@ -236,7 +281,10 @@ const Customers = () => {
             label="Customer Name"
             rules={[{ required: true, message: 'Please enter customer name' }]}
           >
-            <Input placeholder="Enter customer name" />
+            <Input 
+              placeholder="Enter customer name" 
+              disabled={editCustomer?.customerName?.toLowerCase() === 'cash'}
+            />
           </Form.Item>
 
           <Form.Item

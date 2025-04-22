@@ -1,66 +1,154 @@
-import Bills from "../models/billsModel.js"; // Assuming you have a Bill model
-import Product from '../models/productModel.js'; // Assuming you have a Product model
+// import Bills from "../models/billsModel.js";
+// import Product from '../models/productModel.js';
+
+
+import Bills from "../models/billsModel.js";
+import Product from '../models/productModel.js';
+import Customer from '../models/Customer.js'; // Make sure to import your Customer model
 
 export const addBillsController = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
-
     const {
+      customer,
       customerName,
       customerPhone,
       customerAddress,
       subTotal,
-      tax,
+      tax = 0,
       totalAmount,
-      totalCost, 
+      totalCost,
+      paymentMethod,
+      amountPaid = 0,
+      remainingAmount,
+      creditAmount = 0,
+      isCredit = false,
       cartItems,
-      createdAt,
+      createdAt = new Date(),
       invoiceNumber,
     } = req.body;
 
-    // Calculate Profit
-    const profit = totalAmount - totalCost;
+    // Validate required fields
+    if (!cartItems || cartItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart items are required"
+      });
+    }
+
+    // Validate and format credit amount
+    const parsedCreditAmount = parseFloat(creditAmount) || 0;
+    if (isCredit && parsedCreditAmount < 0.01) {
+      return res.status(400).json({
+        success: false,
+        message: "Credit amount must be at least 0.01"
+      });
+    }
+
+    // Calculate profit if not provided
+    const calculatedProfit = totalAmount - totalCost;
 
     // Create new bill
     const newBill = new Bills({
       invoiceNumber,
+      customer,
       customerName,
       customerPhone,
       customerAddress,
       subTotal,
       tax,
       totalAmount,
-      totalCost, 
-      profit, 
-      cartItems,
+      totalCost,
+      profit: calculatedProfit,
+      paymentMethod,
+      amountPaid,
+      remainingAmount,
+      creditAmount: parsedCreditAmount,
+      isCredit,
+      cartItems: cartItems.map(item => ({
+        productNo: item.productNo,
+        itemDescription: item.itemDescription,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        cost: item.cost,
+        profit: (item.unitPrice - item.cost) * item.quantity,
+        totalItemCost: item.cost * item.quantity
+      })),
       createdAt,
+      status: 'completed'
     });
 
-    // Process cart items and reduce stock
-    for (let item of cartItems) {
+    for (const item of cartItems) {
       const product = await Product.findOne({ productNo: item.productNo });
-
+      
       if (!product) {
-        return res.status(404).json({ success: false, message: `Product ${item.productNo} not found` });
+        return res.status(404).json({
+          success: false,
+          message: `Product ${item.productNo} not found`
+        });
       }
 
-      // Ensure the quantity being sold does not exceed available stock
       if (product.stockQuantity < item.quantity) {
-        return res.status(400).json({ success: false, message: `Not enough stock for product ${item.productNo}` });
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for product ${item.productNo} (Available: ${product.stockQuantity})`
+        });
       }
 
-      // Reduce the stock in the inventory
-      await product.adjustStock(-item.quantity);
+      
+      product.stockQuantity -= item.quantity;
+      await product.save();
     }
 
     // Save the bill
-    await newBill.save();
+    const savedBill = await newBill.save();
 
-    // Send success response
-    res.status(201).json({ success: true, message: "Bill added and stock updated successfully!" });
+ 
+    if (isCredit && customer && parsedCreditAmount >= 0.01) {
+      try {
+        const customerDoc = await Customer.findById(customer);
+        if (!customerDoc) {
+          console.warn(`Customer ${customer} not found for credit update`);
+        } else {
+       
+          customerDoc.creditBalance = (customerDoc.creditBalance || 0) + parsedCreditAmount;
+          
+          customerDoc.creditHistory.push({
+            date: new Date(),
+            billId: savedBill._id,
+            amount: parsedCreditAmount,
+            description: `Credit sale INV-${invoiceNumber}`,
+            type: 'credit'
+          });
+          
+          await customerDoc.save();
+          console.log(`Updated credit for customer ${customer} by ${parsedCreditAmount}`);
+        }
+      } catch (error) {
+        console.error("Customer credit update failed:", error);
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Bill created successfully",
+      data: {
+        billNumber: savedBill.billNumber,
+        invoiceNumber: savedBill.invoiceNumber,
+        billId: savedBill._id,
+        customer: savedBill.customer,
+        totalAmount: savedBill.totalAmount,
+        creditAmount: savedBill.creditAmount,
+        isCredit: savedBill.isCredit
+      }
+    });
+
   } catch (error) {
-    console.error("Error adding bill:", error);
-    res.status(400).json({ success: false, message: "Error adding bill", error: error.message });
+    console.error("Error in addBillsController:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
 

@@ -57,11 +57,25 @@ const POSBilling = () => {
           axios.get("https://senuri-auto-server.onrender.com/api/customers/getcustomers"),
           axios.get("https://senuri-auto-server.onrender.com/api/products/getproducts")
         ]);
-        setCustomers(customersRes.data);
-        setAllProducts(productsRes.data);
-        
+    
+        // Handle customers response
+        const customersData = customersRes.data.customers || customersRes.data.data || customersRes.data;
+        if (!Array.isArray(customersData)) {
+          throw new Error("Customers data is not an array");
+        }
+        setCustomers(customersData);
+    
+        // Handle products response
+        const productsData = productsRes.data.products || productsRes.data.data || productsRes.data;
+        if (!Array.isArray(productsData)) {
+          throw new Error("Products data is not an array");
+        }
+        setAllProducts(productsData);
+    
         // Find and set the Cash customer if exists
-        const cashCustomer = customersRes.data.find(c => c.customerName === "Cash");
+        const cashCustomer = customersData.find(c => 
+          c.customerName && c.customerName.toLowerCase() === "cash"
+        );
         if (cashCustomer) {
           setCustomerName("Cash");
           setCustomerId(cashCustomer._id);
@@ -69,6 +83,9 @@ const POSBilling = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
         message.error("Failed to load initial data");
+        // Initialize empty arrays to prevent further errors
+        setCustomers([]);
+        setAllProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -78,6 +95,11 @@ const POSBilling = () => {
 
   // Customer handling functions
   const filterCustomers = (input) => {
+    if (!Array.isArray(customers)) {
+      console.error("Customers is not an array:", customers);
+      return;
+    }
+  
     if (isTypingCustomerNumber) {
       const filtered = customers.filter(customer =>
         customer.customerPhone && customer.customerPhone.includes(input)
@@ -85,7 +107,7 @@ const POSBilling = () => {
       setFilteredCustomers(filtered);
     } else {
       const filtered = customers.filter(customer =>
-        customer.customerName.toLowerCase().includes(input.toLowerCase())
+        customer.customerName && customer.customerName.toLowerCase().includes(input.toLowerCase())
       );
       setFilteredCustomers(filtered);
     }
@@ -765,12 +787,8 @@ const POSBilling = () => {
                 paddingTop: 10
               }}>
                 <div style={{ marginBottom: 8 }}>
-                  <span style={{ marginRight: 10 }}>Subtotal:</span>
+                  <span style={{ marginRight: 10 }}>total:</span>
                   <strong>Rs {calculateTotal()}</strong>
-                </div>
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ marginRight: 10 }}>Total Payable:</span>
-                  <strong>Rs {totalPayable()}</strong>
                 </div>
                 <div style={{ marginBottom: 8 }}>
                   <span style={{ marginRight: 10 }}>Amount Paid:</span>

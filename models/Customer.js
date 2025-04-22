@@ -5,8 +5,6 @@ const customerSchema = new mongoose.Schema({
         type: String, 
         required: [true, 'Customer name is required'],
         trim: true,
-        minLength: [2, 'Name must be at least 2 characters'],
-        maxLength: [50, 'Name cannot exceed 50 characters']
     },
     customerPhone: { 
         type: String, 

@@ -10,6 +10,8 @@ import {
   DatabaseOutlined,
   UserDeleteOutlined,
   CarOutlined,
+  ProfileOutlined ,
+  FileProtectOutlined ,
   ShoppingCartOutlined
 } from '@ant-design/icons';
 import './layout.css';
@@ -18,10 +20,10 @@ import { useSelector } from 'react-redux';
 import Spinner from './Spinner';
 
 const { Header, Sider, Content } = Layout;
+const { SubMenu } = Menu;
 
 const LayoutApp = ({ children }) => {
   const { cartItems, loading } = useSelector(state => state.rootReducer);
-
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
 
@@ -30,7 +32,7 @@ const LayoutApp = ({ children }) => {
   };
 
   useEffect(() => {
-    localStorage.setItem('cartItems', JSON.stringify(cartItems))
+    localStorage.setItem('cartItems', JSON.stringify(cartItems));
   }, [cartItems]);
 
   return (
@@ -38,10 +40,10 @@ const LayoutApp = ({ children }) => {
       {loading && <Spinner />}
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div className="logo">
-          <CarOutlined /> {/* Icon placed directly in JSX */}
+          <CarOutlined />
           <h2 className="logo-title">Senuri Auto</h2>
         </div>
-        <Menu theme="dark" mode="inline" defaultSelectedKeys={window.location.pathname}>
+        <Menu theme="dark" mode="inline" defaultSelectedKeys={[window.location.pathname]}>
           <Menu.Item key='/' icon={<HomeOutlined />}>
             <Link to="/">Home</Link>
           </Menu.Item>
@@ -51,30 +53,44 @@ const LayoutApp = ({ children }) => {
           <Menu.Item key="/products" icon={<HomeOutlined />}>
             <Link to="/products">Products</Link>
           </Menu.Item>
-
           <Menu.Item key="/inventory" icon={<HomeOutlined />}>
             <Link to="/inventory">Inventory</Link>
           </Menu.Item>
-
           <Menu.Item key='/customers' icon={<UserSwitchOutlined />}>
             <Link to="/customers">Customers</Link>
           </Menu.Item>
-
           <Menu.Item key='/supplier' icon={<UserDeleteOutlined />}>
             <Link to="/supplier">Suppliers</Link>
           </Menu.Item>
-
-
           <Menu.Item key='/category' icon={<DatabaseOutlined />}>
             <Link to="/category">Category</Link>
           </Menu.Item>
 
-          <Menu.Item key='/logout' icon={<LogoutOutlined />} onClick={() => { localStorage.removeItem("auth"); navigate("/login"); }}>
+          {/* Correctly integrated SubMenu */}
+          <SubMenu key="reports" icon={<ProfileOutlined />} title="Reports">
+            <Menu.Item key="/reports/profit" icon={<FileProtectOutlined />}>
+              <Link to="/reports/profit">Profit Report</Link>
+            </Menu.Item>
+            <Menu.Item key="/reports/daily" icon={<FileProtectOutlined />}>
+              <Link to="/reports/daily">Daily Collection</Link>
+            </Menu.Item>
+          </SubMenu>
+
+          <Menu.Item
+            key='/logout'
+            icon={<LogoutOutlined />}
+            onClick={() => {
+              localStorage.removeItem("auth");
+              navigate("/login");
+            }}
+          >
             LogOut
           </Menu.Item>
         </Menu>
       </Sider>
+
       <Layout className="site-layout">
+        {/* Optional header (commented) */}
         {/* <Header className="site-layout-background" style={{ padding: 0 }}>
           {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
             className: 'trigger',
@@ -85,6 +101,7 @@ const LayoutApp = ({ children }) => {
             <span className="cart-badge">{cartItems.length}</span>
           </div>
         </Header> */}
+
         <Content
           className="site-layout-background"
           style={{

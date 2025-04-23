@@ -301,7 +301,7 @@ const ProfitReport = () => {
                     </div>
                 </div>
 
-                <div className="no-print" style={{ textAlign: 'center', marginTop: 20 }}>
+                <div className="NO-print" style={{ textAlign: 'center', marginTop: 20 }}>
                     <Button
                         type="primary"
                         icon={<EyeOutlined />}

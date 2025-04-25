@@ -5,6 +5,8 @@ import { DeleteOutlined, EditOutlined, FilterOutlined } from '@ant-design/icons'
 import { Button, Form, Input, Modal, Table, message, Card, Row, Col } from 'antd';
 import Layout from '../../components/Layout';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+
 const Suppliers = () => {
   const dispatch = useDispatch();
 
@@ -25,7 +27,7 @@ const Suppliers = () => {
   const getAllSuppliers = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/suppliers/getsuppliers');
+      const { data } = await axios.get(`${BASE_URL}/suppliers/getsuppliers`);
       setSupplierData(data);
       setFilteredData(data);
       dispatch({ type: 'HIDE_LOADING' });
@@ -69,7 +71,7 @@ const Suppliers = () => {
   const handlerDelete = async (record) => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      await axios.delete(`https://senuri-auto-server.onrender.com/api/suppliers/deletesupplier/${record._id}`);
+      await axios.delete(`${BASE_URL}/suppliers/deletesupplier/${record._id}`);
       message.success('Supplier Deleted Successfully!');
       getAllSuppliers();
     } catch (error) {
@@ -85,10 +87,10 @@ const Suppliers = () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
       if (editSupplier) {
-        await axios.put(`https://senuri-auto-server.onrender.com/api/suppliers/updatesupplier/${editSupplier._id}`, values);
+        await axios.put(`${BASE_URL}/suppliers/updatesupplier/${editSupplier._id}`, values);
         message.success('Supplier Updated Successfully!');
       } else {
-        await axios.post('https://senuri-auto-server.onrender.com/api/suppliers/addsupplier', values);
+        await axios.post(`${BASE_URL}/suppliers/addsupplier`, values);
         message.success('Supplier Added Successfully!');
       }
       setPopModal(false);

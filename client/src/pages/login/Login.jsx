@@ -4,6 +4,8 @@ import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -11,7 +13,7 @@ const Login = () => {
   const handlerSubmit = async (value) => {
     try {
       dispatch({ type: "SHOW_LOADING" });
-      const res = await axios.post('https://senuri-auto-server.onrender.com/api/users/login', value);
+      const res = await axios.post(`${BASE_URL}/users/login`, value);
       dispatch({ type: "HIDE_LOADING" });
       message.success("User Login Successfully!");
       localStorage.setItem("auth", JSON.stringify(res.data));

@@ -370,7 +370,7 @@ const POSBilling = () => {
   return (
     <LayoutApp>
       <div className="p-6 min-h-screen flex justify-center items-center">
-        <div className="bg-white p-6 w-full max-w-4xl rounded shadow">
+        <div className="bg-white p-6 w-full max-w-4xl rounded">
           <h2 className="text-lg font-bold mb-4">Billing System</h2>
           
           {/* Action Button */}

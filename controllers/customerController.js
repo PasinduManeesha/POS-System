@@ -247,57 +247,39 @@ export const getCustomerBalance = async (req, res) => {
 
 export const addCreditPayment = async (req, res) => {
   try {
-    const { amount, description = 'Credit payment' } = req.body;
-    const { id: customerId } = req.params;
+    const { id } = req.params;
+    const { amount, billId, description, type } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return errorResponse(res, 400, 'Invalid customer ID');
+    if (!['credit', 'payment'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid transaction type' });
+    }
+    if (amount < 0.01) {
+      return res.status(400).json({ message: 'Amount must be at least 0.01' });
     }
 
-    if (!amount || isNaN(amount) || amount <= 0) {
-      return errorResponse(res, 400, 'Valid payment amount is required (must be greater than 0)');
-    }
-
-    const customer = await Customer.findById(customerId);
+    const customer = await Customer.findById(id);
     if (!customer) {
-      return errorResponse(res, 404, 'Customer not found');
+      return res.status(404).json({ message: 'Customer not found' });
     }
 
-    const paymentAmount = parseFloat(amount).toFixed(2);
-
-    console.log(`Adding payment entry for customer ${customerId}:`, {
-      amount: -parseFloat(paymentAmount),
-      description,
-      type: 'payment',
-    });
-
-    customer.creditHistory.push({
-      amount: -parseFloat(paymentAmount),
-      description,
-      type: 'payment',
+    const entry = {
       date: new Date(),
-    });
+      billId,
+      amount: type === 'payment' ? -parseFloat(amount).toFixed(2) : parseFloat(amount).toFixed(2),
+      description,
+      type
+    };
 
+    customer.creditHistory.push(entry);
     customer.creditBalance = parseFloat(
       customer.creditHistory.reduce((total, entry) => total + entry.amount, 0).toFixed(2)
     );
 
-    if (customer.creditBalance < 0) {
-      return errorResponse(res, 400, 'Payment would result in negative balance');
-    }
-
     await customer.save();
 
-    return successResponse(res, 200, {
-      newBalance: customer.creditBalance,
-      payment: {
-        amount: parseFloat(paymentAmount),
-        date: new Date(),
-        description,
-      },
-    });
+    res.status(200).json({ message: 'Transaction added successfully', balance: customer.creditBalance });
   } catch (error) {
-    console.error('Error processing payment:', error);
-    return errorResponse(res, 500, 'Server error while processing payment', error.message);
+    console.error('Error adding credit/payment:', error);
+    res.status(500).json({ message: 'Error adding transaction', error: error.message });
   }
 };

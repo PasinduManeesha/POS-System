@@ -9,10 +9,6 @@ import moment from "moment";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-
-
-
-
 const POSBilling = () => {
   // State declarations
   const [invoiceNumber, setInvoiceNumber] = useState("");
@@ -25,7 +21,7 @@ const POSBilling = () => {
     itemDescription: "",
     unitPrice: "",
     quantity: "",
-    cost: "",
+    cost: ""
   });
   const [editingIndex, setEditingIndex] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -43,8 +39,6 @@ const POSBilling = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [highlightedCustomerIndex, setHighlightedCustomerIndex] = useState(-1);
   const [highlightedProductIndex, setHighlightedProductIndex] = useState(-1);
-
-
   const [popModal, setPopModal] = useState(false);
 
   const shortcuts = [
@@ -54,10 +48,9 @@ const POSBilling = () => {
     { keys: ["Tab"], description: "Generate Bill" },
     { keys: ["Del"], description: "Clear Form" },
     { keys: ["Ctrl", "N"], description: "New Display Window" },
-    { keys: ["F4"], description: "Show This Help" },
+    { keys: ["F4"], description: "Show This Help" }
   ];
 
-  
   // Refs
   const componentRef = useRef();
   const productNoRef = useRef(null);
@@ -249,7 +242,7 @@ const POSBilling = () => {
     .reduce((total, p) => total + (p.cost * p.quantity), 0)
     .toFixed(2);
 
-  const calculateProfit = () => (calculateTotal() - calculateTotalCost()).toFixed(2);
+  const calculateProfit = () => (parseFloat(calculateTotal()) - parseFloat(calculateTotalCost())).toFixed(2);
 
   const remainingAmount = () => (parseFloat(amountPaid || 0) - parseFloat(calculateTotal())).toFixed(2);
 
@@ -285,12 +278,13 @@ const POSBilling = () => {
         subTotal,
         totalAmount: subTotal,
         totalCost: parseFloat(calculateTotalCost()),
-        profit: subTotal - parseFloat(calculateTotalCost()),
+        profit: parseFloat(calculateProfit()),
         paymentMethod,
         amountPaid: parseFloat(amountPaid || 0),
         remainingAmount: remaining,
         creditAmount: Math.max(-remaining, 0),
         isCredit: remaining < 0,
+        status: remaining < 0 ? 'pending' : 'completed',
         cartItems: selectedProducts.map(item => ({
           productNo: item.productNo,
           itemDescription: item.itemDescription,
@@ -300,18 +294,19 @@ const POSBilling = () => {
           totalItemCost: item.cost * item.quantity,
           profit: (item.unitPrice - item.cost) * item.quantity
         })),
-        createdAt: new Date(),
+        createdAt: new Date()
       };
 
       const response = await axios.post(`${BASE_URL}/bills/addbills`, billData);
-      
-      if (remaining < 0 && customerId && customerName !== "Cash") {
-        await axios.post(`${BASE_URL}/customers/${customerId}/payments`, {
-          amount: Math.abs(remaining),
-          billId: response.data._id,
-          description: `Credit sale INV-${invoiceNumber}`,
-          type: 'credit'
-        });
+
+      // Update customer balance for credit transactions (unpaid)
+      if (remaining < 0 && customerId && customerName.toLowerCase() !== "cash") {
+        // const creditResponse = await axios.post(`${BASE_URL}/customers/${customerId}/payments`, {
+        //   amount: Math.abs(remaining),
+        //   billId: response.data.data.billId,
+        //   description: `Unpaid credit sale INV-${invoiceNumber}`,
+        //   type: 'credit'
+        // });
         const balanceRes = await axios.get(`${BASE_URL}/customers/${customerId}/balance`);
         setCustomerBalance(balanceRes.data.balance || 0);
       }
@@ -344,8 +339,7 @@ const POSBilling = () => {
       if (e.key === 'F1') {
         e.preventDefault();
         amountPaidInput.current?.focus();
-      }
-      else if (e.key === 'Tab') {
+      } else if (e.key === 'Tab') {
         e.preventDefault();
         if (!customerName || customerName.trim() === "") {
           message.error("Please enter customer details before generating the bill.");
@@ -354,20 +348,16 @@ const POSBilling = () => {
         } else {
           saveBillRef.current?.();
         }
-      }
-      else if (e.key === 'F2') {
+      } else if (e.key === 'F2') {
         e.preventDefault();
         paymentMethodSelect.current?.focus();
-      }
-      else if (e.key === 'F3') {
+      } else if (e.key === 'F3') {
         e.preventDefault();
         customerNameInput.current?.focus();
-      }
-      else if (e.key === 'Delete') {
+      } else if (e.key === 'Delete') {
         e.preventDefault();
         clearButton.current?.click();
-      }
-      else if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+      } else if (e.ctrlKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         newDisplayButton.current?.click();
       }
@@ -382,46 +372,40 @@ const POSBilling = () => {
       <div className="p-6 min-h-screen flex justify-center items-center">
         <div className="bg-white p-6 w-full max-w-4xl rounded shadow">
           <h2 className="text-lg font-bold mb-4">Billing System</h2>
-
-
           
-      {/* Action Button */}
-      <Button
-        className="add-new"
-        type="primary"
-        onClick={() => setPopModal(true)}
-      >
-        Shortcuts
-      </Button>
+          {/* Action Button */}
+          <Button
+            className="add-new"
+            type="primary"
+            onClick={() => setPopModal(true)}
+          >
+            Shortcuts
+          </Button>
 
-      {/* Modal */}
-      <Modal
-        title="Keyboard Shortcuts"
-        visible={popModal}
-        onCancel={() => setPopModal(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <div className="shortcut-list">
-          {shortcuts.map((shortcut, index) => (
-            <div className="shortcut-item" key={index}>
-              <div className="key-combination">
-                {shortcut.keys.map((key, i) => (
-                  <React.Fragment key={i}>
-                    <kbd className="key">{key}</kbd>
-                    {i < shortcut.keys.length - 1 && <span> + </span>}
-                  </React.Fragment>
-                ))}
-              </div>
-              <span>{shortcut.description}</span>
+          {/* Modal */}
+          <Modal
+            title="Keyboard Shortcuts"
+            visible={popModal}
+            onCancel={() => setPopModal(false)}
+            footer={null}
+            destroyOnClose
+          >
+            <div className="shortcut-list">
+              {shortcuts.map((shortcut, index) => (
+                <div className="shortcut-item" key={index}>
+                  <div className="key-combination">
+                    {shortcut.keys.map((key, i) => (
+                      <React.Fragment key={i}>
+                        <kbd className="key">{key}</kbd>
+                        {i < shortcut.keys.length - 1 && <span> + </span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <span>{shortcut.description}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </Modal>
-    
-
-
-
+          </Modal>
 
           {/* Customer Section */}
           <div className="grid grid-cols-3 gap-4 mb-4">

@@ -56,9 +56,17 @@ const LayoutApp = ({ children }) => {
           <Menu.Item key="/inventory" icon={<HomeOutlined />}>
             <Link to="/inventory">Inventory</Link>
           </Menu.Item>
+          
+
+          <SubMenu key="Customers" icon={<UserSwitchOutlined />} title="Customers">
           <Menu.Item key='/customers' icon={<UserSwitchOutlined />}>
             <Link to="/customers">Customers</Link>
           </Menu.Item>
+            <Menu.Item key="/customers-credit" icon={<UserSwitchOutlined />}>
+              <Link to="/customers-credit">Customer Credit</Link>
+            </Menu.Item>
+          </SubMenu>
+
           <Menu.Item key='/supplier' icon={<UserDeleteOutlined />}>
             <Link to="/supplier">Suppliers</Link>
           </Menu.Item>

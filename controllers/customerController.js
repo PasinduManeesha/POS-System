@@ -2,20 +2,22 @@ import Customer from "../models/Customer.js";
 import Bill from "../models/billsModel.js";
 
 // Utility functions
-const sanitizePhone = (phone) => phone?.replace(/\D/g, '').slice(0, 10) || '';
+const sanitizePhone = (phone) => phone?.replace(/\D/g, "").slice(0, 10) || "";
 const validatePhone = (phone) => /^\d{10}$/.test(phone);
 
 // Response helpers
-const errorResponse = (res, status, message, error = null) => res.status(status).json({
-  success: false,
-  message,
-  error: error?.message || error
-});
+const errorResponse = (res, status, message, error = null) =>
+  res.status(status).json({
+    success: false,
+    message,
+    error: error?.message || error,
+  });
 
-const successResponse = (res, status, data) => res.status(status).json({
-  success: true,
-  ...data
-});
+const successResponse = (res, status, data) =>
+  res.status(status).json({
+    success: true,
+    ...data,
+  });
 
 // Customer CRUD Operations
 export const createCustomer = async (req, res) => {
@@ -39,7 +41,7 @@ export const createCustomer = async (req, res) => {
     const customer = await Customer.create({
       customerName,
       customerPhone: cleanPhone,
-      customerAddress: customerAddress || ''
+      customerAddress: customerAddress || "",
     });
 
     return successResponse(res, 201, {
@@ -48,10 +50,9 @@ export const createCustomer = async (req, res) => {
         customerName: customer.customerName,
         customerPhone: customer.customerPhone,
         customerAddress: customer.customerAddress,
-        creditBalance: customer.creditBalance
-      }
+        creditBalance: customer.creditBalance,
+      },
     });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while creating customer", error);
   }
@@ -59,23 +60,25 @@ export const createCustomer = async (req, res) => {
 
 export const getAllCustomers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { page = 1, limit = 10, search = "" } = req.query;
     const skip = (page - 1) * limit;
 
-    const query = search ? {
-      $or: [
-        { customerName: { $regex: search, $options: 'i' } },
-        { customerPhone: { $regex: search, $options: 'i' } }
-      ]
-    } : {};
+    const query = search
+      ? {
+          $or: [
+            { customerName: { $regex: search, $options: "i" } },
+            { customerPhone: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
 
     const [customers, count] = await Promise.all([
       Customer.find(query)
         .sort({ customerName: 1 })
         .skip(skip)
         .limit(limit)
-        .select('-__v -creditHistory'),
-      Customer.countDocuments(query)
+        .select("-__v -creditHistory"),
+      Customer.countDocuments(query),
     ]);
 
     return successResponse(res, 200, {
@@ -84,10 +87,9 @@ export const getAllCustomers = async (req, res) => {
         totalItems: count,
         totalPages: Math.ceil(count / limit),
         currentPage: +page,
-        itemsPerPage: +limit
-      }
+        itemsPerPage: +limit,
+      },
     });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while fetching customers", error);
   }
@@ -95,27 +97,26 @@ export const getAllCustomers = async (req, res) => {
 
 export const getCustomerById = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id).select('-__v');
+    const customer = await Customer.findById(req.params.id).select("-__v");
     if (!customer) {
       return errorResponse(res, 404, "Customer not found");
     }
 
     const recentTransactions = await Bill.find({
       customer: customer._id,
-      isCredit: true
+      isCredit: true,
     })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select('invoiceNumber createdAt creditAmount');
+      .select("invoiceNumber createdAt creditAmount");
 
     return successResponse(res, 200, {
       customer,
       creditSummary: {
         balance: customer.creditBalance,
-        recentTransactions
-      }
+        recentTransactions,
+      },
     });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while fetching customer", error);
   }
@@ -133,7 +134,7 @@ export const updateCustomer = async (req, res) => {
 
       const existingCustomer = await Customer.findOne({
         customerPhone: cleanPhone,
-        _id: { $ne: req.params.id }
+        _id: { $ne: req.params.id },
       });
 
       if (existingCustomer) {
@@ -142,18 +143,16 @@ export const updateCustomer = async (req, res) => {
       updateData.customerPhone = cleanPhone;
     }
 
-    const customer = await Customer.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-__v');
+    const customer = await Customer.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-__v");
 
     if (!customer) {
       return errorResponse(res, 404, "Customer not found");
     }
 
     return successResponse(res, 200, { customer });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while updating customer", error);
   }
@@ -163,7 +162,7 @@ export const deleteCustomer = async (req, res) => {
   try {
     const [customer, billCount] = await Promise.all([
       Customer.findById(req.params.id),
-      Bill.countDocuments({ customer: req.params.id })
+      Bill.countDocuments({ customer: req.params.id }),
     ]);
 
     if (!customer) {
@@ -180,7 +179,6 @@ export const deleteCustomer = async (req, res) => {
 
     await Customer.findByIdAndDelete(req.params.id);
     return successResponse(res, 200, { message: "Customer deleted successfully" });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while deleting customer", error);
   }
@@ -194,7 +192,7 @@ export const findCustomerByPhone = async (req, res) => {
       return errorResponse(res, 400, "Phone number must be 10 digits");
     }
 
-    const customer = await Customer.findOne({ customerPhone: cleanPhone }).select('-__v');
+    const customer = await Customer.findOne({ customerPhone: cleanPhone }).select("-__v");
     if (!customer) {
       return errorResponse(res, 404, "Customer not found");
     }
@@ -205,63 +203,27 @@ export const findCustomerByPhone = async (req, res) => {
         customerName: customer.customerName,
         customerPhone: customer.customerPhone,
         customerAddress: customer.customerAddress,
-        creditBalance: customer.creditBalance
-      }
+        creditBalance: customer.creditBalance,
+      },
     });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while finding customer", error);
   }
 };
 
-// Credit Operations
-export const addCreditPayment = async (req, res) => {
-  try {
-    const { amount, paymentDate = new Date(), notes = '' } = req.body;
-
-    if (!amount || amount <= 0) {
-      return errorResponse(res, 400, "Valid payment amount is required");
-    }
-
-    const customer = await Customer.findById(req.params.id);
-    if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
-    }
-
-    customer.creditBalance = Math.max(0, customer.creditBalance - amount);
-    customer.creditHistory.push({
-      date: paymentDate,
-      amount: -amount,
-      description: notes || 'Credit payment',
-      type: 'payment'
-    });
-
-    await customer.save();
-
-    return successResponse(res, 200, {
-      newBalance: customer.creditBalance,
-      payment: { amount, date: paymentDate, notes }
-    });
-
-  } catch (error) {
-    return errorResponse(res, 500, "Server error while processing payment", error);
-  }
-};
-
 export const getCustomerCreditHistory = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id)
-      .select('creditHistory creditBalance');
+    console.log("Fetching history for customer ID:", req.params.id);
+    const customer = await Customer.findById(req.params.id).select("creditHistory creditBalance");
 
     if (!customer) {
       return errorResponse(res, 404, "Customer not found");
     }
 
     return successResponse(res, 200, {
+      history: customer.creditHistory.sort((a, b) => b.date - a.date),
       balance: customer.creditBalance,
-      history: customer.creditHistory.sort((a, b) => b.date - a.date)
     });
-
   } catch (error) {
     return errorResponse(res, 500, "Server error while fetching credit history", error);
   }
@@ -269,16 +231,70 @@ export const getCustomerCreditHistory = async (req, res) => {
 
 export const getCustomerBalance = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id).select('creditBalance');
+    const customer = await Customer.findById(req.params.id).select("creditBalance");
     if (!customer) {
       return errorResponse(res, 404, "Customer not found");
     }
 
     return successResponse(res, 200, {
-      balance: customer.creditBalance || 0
+      balance: customer.creditBalance || 0,
     });
-
   } catch (error) {
     return errorResponse(res, 500, "Failed to load customer balance", error);
+  }
+};
+
+export const addCreditPayment = async (req, res) => {
+  try {
+    const { amount, description = "Credit payment" } = req.body;
+    const { id: customerId } = req.params;
+
+    // Validate customerId
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      return errorResponse(res, 400, "Invalid customer ID");
+    }
+
+    // Validate amount
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return errorResponse(res, 400, "Valid payment amount is required");
+    }
+
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return errorResponse(res, 404, "Customer not found");
+    }
+
+    const paymentAmount = parseFloat(amount).toFixed(2);
+
+    // Add payment to credit history
+    customer.creditHistory.push({
+      amount: -parseFloat(paymentAmount),
+      description,
+      type: "payment",
+      date: new Date(),
+    });
+
+    // Update credit balance
+    customer.creditBalance = customer.creditHistory.reduce((total, entry) => {
+      return total + entry.amount;
+    }, 0);
+
+    if (customer.creditBalance < 0) {
+      return errorResponse(res, 400, "Payment would result in negative balance");
+    }
+
+    await customer.save();
+
+    return successResponse(res, 200, {
+      newBalance: customer.creditBalance,
+      payment: {
+        amount: parseFloat(paymentAmount),
+        date: new Date(),
+        description,
+      },
+    });
+  } catch (error) {
+    console.error('Error processing payment:', error); // Log full error for debugging
+    return errorResponse(res, 500, "Server error while processing payment", error.message);
   }
 };

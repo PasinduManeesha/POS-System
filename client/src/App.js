@@ -13,6 +13,7 @@ import Category from "./pages/category/category";
 import Suppliers from "./pages/suppliers/suppliers";
 import Inventory from "./pages/inventory/inventory";
 import ProfitReport from "./pages/reports/profit";
+import CustomersCredit from "./pages/customers/CustomersCredit";
 //import DailyCollection from "./pages/reports/DailyCollection";
 
 function App() {
@@ -65,6 +66,14 @@ function App() {
             element={
               <ProtectedRouter>
                 <Customers />
+              </ProtectedRouter>
+            }
+          />
+           <Route
+            path="/customers-credit"
+            element={
+              <ProtectedRouter>
+                <CustomersCredit />
               </ProtectedRouter>
             }
           />

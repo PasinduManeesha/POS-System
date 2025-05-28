@@ -26,14 +26,12 @@ const CustomersCredit = () => {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [searchText, setSearchText] = useState('');
 
-  // Debugging state changes
   useEffect(() => {
     console.log('creditHistoryModalVisible:', creditHistoryModalVisible);
     console.log('paymentModalVisible:', paymentModalVisible);
     console.log('selectedCustomer:', selectedCustomer);
   }, [creditHistoryModalVisible, paymentModalVisible, selectedCustomer]);
 
-  // Fetch all customers
   const getAllCustomers = async (params = {}) => {
     try {
       console.log('Fetching customers with params:', params);
@@ -49,8 +47,8 @@ const CustomersCredit = () => {
 
       const customers = data?.customers || data?.data || [];
       const filteredCustomers = customers
-        .filter(c => c.customerName?.toLowerCase() !== 'cash')
-        .map(customer => ({
+        .filter((c) => c.customerName?.toLowerCase() !== 'cash')
+        .map((customer) => ({
           ...customer,
           key: customer._id || Math.random().toString(),
           customerName: customer.customerName || 'Unknown Customer',
@@ -74,7 +72,6 @@ const CustomersCredit = () => {
     }
   };
 
-  // Fetch credit history
   const getCreditHistory = async (customerId) => {
     try {
       console.log('Fetching credit history for customerId:', customerId);
@@ -102,7 +99,6 @@ const CustomersCredit = () => {
     }
   };
 
-  // Handle payment submission
   const handlePaymentSubmit = async (values) => {
     try {
       console.log('Submitting payment with values:', values);
@@ -124,7 +120,7 @@ const CustomersCredit = () => {
             setPaymentModalVisible(false);
             paymentForm.resetFields();
 
-            const updatedCustomers = customerData.map(customer => {
+            const updatedCustomers = customerData.map((customer) => {
               if (customer._id === selectedCustomer._id) {
                 return {
                   ...customer,
@@ -306,7 +302,7 @@ const CustomersCredit = () => {
 
       <Modal
         title={`Credit History - ${selectedCustomer?.customerName || 'Customer'}`}
-        visible={creditHistoryModalVisible} // Use 'open' if Ant Design v5
+        visible={creditHistoryModalVisible}
         onCancel={() => {
           console.log('Closing credit history modal');
           setCreditHistoryModalVisible(false);
@@ -399,7 +395,7 @@ const CustomersCredit = () => {
 
       <Modal
         title={`Record Payment - ${selectedCustomer?.customerName || 'Customer'}`}
-        visible={paymentModalVisible} // Use 'open' if Ant Design v5
+        visible={paymentModalVisible}
         onCancel={() => {
           console.log('Closing payment modal');
           setPaymentModalVisible(false);
@@ -407,7 +403,7 @@ const CustomersCredit = () => {
         }}
         footer={[
           <Button
-            key="cancel"
+            key="Close"
             onClick={() => {
               console.log('Cancel payment modal');
               setPaymentModalVisible(false);
@@ -464,6 +460,9 @@ const CustomersCredit = () => {
                   }
                   if (amount > maxAmount) {
                     return Promise.reject(`Amount cannot exceed customer's balance of Rs${maxAmount.toFixed(2)}`);
+                  }
+                  if (amount > 100000) {
+                    return Promise.reject('Amount is too large (maximum Rs100,000)');
                   }
                   return Promise.resolve();
                 },

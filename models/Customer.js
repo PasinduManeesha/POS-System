@@ -1,15 +1,15 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const customerSchema = new mongoose.Schema(
   {
     customerName: {
       type: String,
-      required: [true, "Customer name is required"],
+      required: [true, 'Customer name is required'],
       trim: true,
     },
     customerPhone: {
       type: String,
-      required: [true, "Phone number is required"],
+      required: [true, 'Phone number is required'],
       unique: true,
       validate: {
         validator: function (v) {
@@ -17,17 +17,17 @@ const customerSchema = new mongoose.Schema(
         },
         message: (props) => `${props.value} is not a valid 10-digit phone number!`,
       },
-      set: (v) => v.replace(/\D/g, "").slice(0, 10),
+      set: (v) => v.replace(/\D/g, '').slice(0, 10),
     },
     customerAddress: {
       type: String,
       trim: true,
-      maxLength: [200, "Address cannot exceed 200 characters"],
+      maxLength: [200, 'Address cannot exceed 200 characters'],
     },
     creditBalance: {
       type: Number,
       default: 0,
-      min: [0, "Credit balance cannot be negative"],
+      min: [0, 'Credit balance cannot be negative'],
       set: (v) => parseFloat(v.toFixed(2)),
     },
     creditHistory: [
@@ -39,26 +39,40 @@ const customerSchema = new mongoose.Schema(
         },
         billId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Bills",
+          ref: 'Bills',
           required: function () {
-            return this.type === "credit";
+            return this.type === 'credit';
           },
         },
         amount: {
           type: Number,
           required: true,
-          min: [0.01, "Amount must be at least 0.01"],
+          validate: {
+            validator: function (value) {
+              if (this.type === 'credit') {
+                return value >= 0.01;
+              }
+              if (this.type === 'payment') {
+                return value <= -0.01;
+              }
+              return false;
+            },
+            message: (props) =>
+              props.value >= 0
+                ? `Credit amount must be at least 0.01, got ${props.value}`
+                : `Payment amount must be at least 0.01, got ${Math.abs(props.value)}`,
+          },
         },
         description: {
           type: String,
           trim: true,
-          maxLength: [100, "Description cannot exceed 100 characters"],
+          maxLength: [100, 'Description cannot exceed 100 characters'],
         },
         type: {
           type: String,
-          enum: ["credit", "payment"],
+          enum: ['credit', 'payment'],
           required: true,
-          default: "credit",
+          default: 'credit',
         },
       },
     ],
@@ -71,11 +85,11 @@ const customerSchema = new mongoose.Schema(
 );
 
 customerSchema.index({ customerPhone: 1 }, { unique: true });
-customerSchema.index({ customerName: "text" });
+customerSchema.index({ customerName: 'text' });
 
-customerSchema.virtual("formattedPhone").get(function () {
-  return this.customerPhone?.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3");
+customerSchema.virtual('formattedPhone').get(function () {
+  return this.customerPhone?.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
 });
 
-const Customer = mongoose.model("Customer", customerSchema);
+const Customer = mongoose.model('Customer', customerSchema);
 export default Customer;

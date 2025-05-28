@@ -1,8 +1,9 @@
-import Customer from "../models/Customer.js";
-import Bill from "../models/billsModel.js";
+import mongoose from 'mongoose';
+import Customer from '../models/Customer.js';
+import Bill from '../models/billsModel.js';
 
 // Utility functions
-const sanitizePhone = (phone) => phone?.replace(/\D/g, "").slice(0, 10) || "";
+const sanitizePhone = (phone) => phone?.replace(/\D/g, '').slice(0, 10) || '';
 const validatePhone = (phone) => /^\d{10}$/.test(phone);
 
 // Response helpers
@@ -25,23 +26,23 @@ export const createCustomer = async (req, res) => {
     const { customerName, customerPhone, customerAddress } = req.body;
 
     if (!customerName || !customerPhone) {
-      return errorResponse(res, 400, "Customer name and phone number are required");
+      return errorResponse(res, 400, 'Customer name and phone number are required');
     }
 
     const cleanPhone = sanitizePhone(customerPhone);
     if (!validatePhone(cleanPhone)) {
-      return errorResponse(res, 400, "Phone number must be 10 digits");
+      return errorResponse(res, 400, 'Phone number must be 10 digits');
     }
 
     const existingCustomer = await Customer.findOne({ customerPhone: cleanPhone });
     if (existingCustomer) {
-      return errorResponse(res, 409, "Customer with this phone number already exists");
+      return errorResponse(res, 409, 'Customer with this phone number already exists');
     }
 
     const customer = await Customer.create({
       customerName,
       customerPhone: cleanPhone,
-      customerAddress: customerAddress || "",
+      customerAddress: customerAddress || '',
     });
 
     return successResponse(res, 201, {
@@ -54,20 +55,20 @@ export const createCustomer = async (req, res) => {
       },
     });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while creating customer", error);
+    return errorResponse(res, 500, 'Server error while creating customer', error);
   }
 };
 
 export const getAllCustomers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const { page = 1, limit = 10, search = '' } = req.query;
     const skip = (page - 1) * limit;
 
     const query = search
       ? {
           $or: [
-            { customerName: { $regex: search, $options: "i" } },
-            { customerPhone: { $regex: search, $options: "i" } },
+            { customerName: { $regex: search, $options: 'i' } },
+            { customerPhone: { $regex: search, $options: 'i' } },
           ],
         }
       : {};
@@ -77,7 +78,7 @@ export const getAllCustomers = async (req, res) => {
         .sort({ customerName: 1 })
         .skip(skip)
         .limit(limit)
-        .select("-__v -creditHistory"),
+        .select('-__v -creditHistory'),
       Customer.countDocuments(query),
     ]);
 
@@ -91,15 +92,15 @@ export const getAllCustomers = async (req, res) => {
       },
     });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while fetching customers", error);
+    return errorResponse(res, 500, 'Server error while fetching customers', error);
   }
 };
 
 export const getCustomerById = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id).select("-__v");
+    const customer = await Customer.findById(req.params.id).select('-__v');
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     const recentTransactions = await Bill.find({
@@ -108,7 +109,7 @@ export const getCustomerById = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .limit(5)
-      .select("invoiceNumber createdAt creditAmount");
+      .select('invoiceNumber createdAt creditAmount');
 
     return successResponse(res, 200, {
       customer,
@@ -118,7 +119,7 @@ export const getCustomerById = async (req, res) => {
       },
     });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while fetching customer", error);
+    return errorResponse(res, 500, 'Server error while fetching customer', error);
   }
 };
 
@@ -129,7 +130,7 @@ export const updateCustomer = async (req, res) => {
     if (customerPhone) {
       const cleanPhone = sanitizePhone(customerPhone);
       if (!validatePhone(cleanPhone)) {
-        return errorResponse(res, 400, "Phone number must be 10 digits");
+        return errorResponse(res, 400, 'Phone number must be 10 digits');
       }
 
       const existingCustomer = await Customer.findOne({
@@ -138,7 +139,7 @@ export const updateCustomer = async (req, res) => {
       });
 
       if (existingCustomer) {
-        return errorResponse(res, 409, "Another customer already uses this phone number");
+        return errorResponse(res, 409, 'Another customer already uses this phone number');
       }
       updateData.customerPhone = cleanPhone;
     }
@@ -146,15 +147,15 @@ export const updateCustomer = async (req, res) => {
     const customer = await Customer.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
-    }).select("-__v");
+    }).select('-__v');
 
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     return successResponse(res, 200, { customer });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while updating customer", error);
+    return errorResponse(res, 500, 'Server error while updating customer', error);
   }
 };
 
@@ -166,21 +167,21 @@ export const deleteCustomer = async (req, res) => {
     ]);
 
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     if (customer.creditBalance > 0) {
-      return errorResponse(res, 400, "Cannot delete customer with outstanding credit balance");
+      return errorResponse(res, 400, 'Cannot delete customer with outstanding credit balance');
     }
 
     if (billCount > 0) {
-      return errorResponse(res, 400, "Cannot delete customer with existing transaction history");
+      return errorResponse(res, 400, 'Cannot delete customer with existing transaction history');
     }
 
     await Customer.findByIdAndDelete(req.params.id);
-    return successResponse(res, 200, { message: "Customer deleted successfully" });
+    return successResponse(res, 200, { message: 'Customer deleted successfully' });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while deleting customer", error);
+    return errorResponse(res, 500, 'Server error while deleting customer', error);
   }
 };
 
@@ -189,12 +190,12 @@ export const findCustomerByPhone = async (req, res) => {
   try {
     const cleanPhone = sanitizePhone(req.params.phone);
     if (!validatePhone(cleanPhone)) {
-      return errorResponse(res, 400, "Phone number must be 10 digits");
+      return errorResponse(res, 400, 'Phone number must be 10 digits');
     }
 
-    const customer = await Customer.findOne({ customerPhone: cleanPhone }).select("-__v");
+    const customer = await Customer.findOne({ customerPhone: cleanPhone }).select('-__v');
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     return successResponse(res, 200, {
@@ -207,17 +208,17 @@ export const findCustomerByPhone = async (req, res) => {
       },
     });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while finding customer", error);
+    return errorResponse(res, 500, 'Server error while finding customer', error);
   }
 };
 
 export const getCustomerCreditHistory = async (req, res) => {
   try {
-    console.log("Fetching history for customer ID:", req.params.id);
-    const customer = await Customer.findById(req.params.id).select("creditHistory creditBalance");
+    console.log('Fetching history for customer ID:', req.params.id);
+    const customer = await Customer.findById(req.params.id).select('creditHistory creditBalance');
 
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     return successResponse(res, 200, {
@@ -225,62 +226,64 @@ export const getCustomerCreditHistory = async (req, res) => {
       balance: customer.creditBalance,
     });
   } catch (error) {
-    return errorResponse(res, 500, "Server error while fetching credit history", error);
+    return errorResponse(res, 500, 'Server error while fetching credit history', error);
   }
 };
 
 export const getCustomerBalance = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id).select("creditBalance");
+    const customer = await Customer.findById(req.params.id).select('creditBalance');
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     return successResponse(res, 200, {
       balance: customer.creditBalance || 0,
     });
   } catch (error) {
-    return errorResponse(res, 500, "Failed to load customer balance", error);
+    return errorResponse(res, 500, 'Failed to load customer balance', error);
   }
 };
 
 export const addCreditPayment = async (req, res) => {
   try {
-    const { amount, description = "Credit payment" } = req.body;
+    const { amount, description = 'Credit payment' } = req.body;
     const { id: customerId } = req.params;
 
-    // Validate customerId
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return errorResponse(res, 400, "Invalid customer ID");
+      return errorResponse(res, 400, 'Invalid customer ID');
     }
 
-    // Validate amount
     if (!amount || isNaN(amount) || amount <= 0) {
-      return errorResponse(res, 400, "Valid payment amount is required");
+      return errorResponse(res, 400, 'Valid payment amount is required (must be greater than 0)');
     }
 
     const customer = await Customer.findById(customerId);
     if (!customer) {
-      return errorResponse(res, 404, "Customer not found");
+      return errorResponse(res, 404, 'Customer not found');
     }
 
     const paymentAmount = parseFloat(amount).toFixed(2);
 
-    // Add payment to credit history
+    console.log(`Adding payment entry for customer ${customerId}:`, {
+      amount: -parseFloat(paymentAmount),
+      description,
+      type: 'payment',
+    });
+
     customer.creditHistory.push({
       amount: -parseFloat(paymentAmount),
       description,
-      type: "payment",
+      type: 'payment',
       date: new Date(),
     });
 
-    // Update credit balance
-    customer.creditBalance = customer.creditHistory.reduce((total, entry) => {
-      return total + entry.amount;
-    }, 0);
+    customer.creditBalance = parseFloat(
+      customer.creditHistory.reduce((total, entry) => total + entry.amount, 0).toFixed(2)
+    );
 
     if (customer.creditBalance < 0) {
-      return errorResponse(res, 400, "Payment would result in negative balance");
+      return errorResponse(res, 400, 'Payment would result in negative balance');
     }
 
     await customer.save();
@@ -294,7 +297,7 @@ export const addCreditPayment = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error processing payment:', error); // Log full error for debugging
-    return errorResponse(res, 500, "Server error while processing payment", error.message);
+    console.error('Error processing payment:', error);
+    return errorResponse(res, 500, 'Server error while processing payment', error.message);
   }
 };

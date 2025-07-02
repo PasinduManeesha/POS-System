@@ -43,7 +43,7 @@ const LayoutApp = ({ children }) => {
       {loading && <Spinner />}
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div className="logo">
-          <img src={Logo} alt="Logo" />;
+          <img src={Logo} alt="Logo" style={{ width: '100px', height: '100px' }} />
           <h2 className="logo-title">{COMPANY_NAME}</h2>
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={[window.location.pathname]}>

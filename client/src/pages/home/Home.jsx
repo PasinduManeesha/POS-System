@@ -6,6 +6,7 @@ import "./home.css";
 import axios from "axios";
 import { message, Modal, Button } from "antd";
 import moment from "moment";
+import Logo from '../../Img/cake-shop-logo.png';
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME;
@@ -718,6 +719,7 @@ const POSBilling = () => {
           <div style={{ display: "none" }}>
             <div id="print-content" ref={componentRef} style={{ padding: '20mm', fontFamily: 'Arial, sans-serif' }}>
               <div style={{ textAlign: 'center', marginBottom: '20mm' }}>
+               <img src={Logo} alt="Logo" style={{ width: '50px', height: '50px' }} />
                 <h1 style={{ fontSize: '24pt', marginBottom: '5mm' }}>{COMPANY_NAME}</h1>
                 <p style={{ fontSize: '12pt' }}>{COMPANY_ADDRESS}</p>
                 <p style={{ fontSize: '10pt' }}>Phone: {COMPANY_PHONE}</p>

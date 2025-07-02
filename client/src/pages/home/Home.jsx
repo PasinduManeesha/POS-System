@@ -8,6 +8,11 @@ import { message, Modal, Button } from "antd";
 import moment from "moment";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME;
+const COMPANY_ADDRESS = process.env.REACT_APP_COMPANY_ADDRESS;
+const COMPANY_PHONE = process.env.REACT_APP_COMPANY_PHONE;
+
+console.log("BASE_URL:", COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE);
 
 const POSBilling = () => {
   // State declarations
@@ -713,9 +718,9 @@ const POSBilling = () => {
           <div style={{ display: "none" }}>
             <div id="print-content" ref={componentRef} style={{ padding: '20mm', fontFamily: 'Arial, sans-serif' }}>
               <div style={{ textAlign: 'center', marginBottom: '20mm' }}>
-                <h1 style={{ fontSize: '24pt', marginBottom: '5mm' }}>Senuri Auto</h1>
-                <p style={{ fontSize: '12pt' }}>123 Business Address, City, Country</p>
-                <p style={{ fontSize: '10pt' }}>Phone: (123) 456-7890 | Email: info@senuriauto.com</p>
+                <h1 style={{ fontSize: '24pt', marginBottom: '5mm' }}>{COMPANY_NAME}</h1>
+                <p style={{ fontSize: '12pt' }}>{COMPANY_ADDRESS}</p>
+                <p style={{ fontSize: '10pt' }}>Phone: {COMPANY_PHONE}</p>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10mm' }}>
                 <div>

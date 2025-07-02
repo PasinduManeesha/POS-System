@@ -139,7 +139,7 @@ export const updateCustomer = async (req, res) => {
       });
 
       if (existingCustomer) {
-        return errorResponse(res, 409, 'Another customer already uses this phone number');
+        return errorResponse(res, 409, 'Anotherjukes this phone number');
       }
       updateData.customerPhone = cleanPhone;
     }
@@ -248,38 +248,46 @@ export const getCustomerBalance = async (req, res) => {
 export const addCreditPayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { amount, billId, description, type } = req.body;
+    const { amount, description = 'Credit payment' } = req.body;
 
-    if (!['credit', 'payment'].includes(type)) {
-      return res.status(400).json({ message: 'Invalid transaction type' });
-    }
-    if (amount < 0.01) {
-      return res.status(400).json({ message: 'Amount must be at least 0.01' });
+    // Validate input
+    if (!amount || isNaN(amount)) {
+      return errorResponse(res, 400, 'Amount is required and must be a number');
     }
 
+    const paymentAmount = parseFloat(amount);
+    if (paymentAmount <= 0) {
+      return errorResponse(res, 400, 'Amount must be greater than 0');
+    }
+
+    // Find customer
     const customer = await Customer.findById(id);
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      return errorResponse(res, 404, 'Customer not found');
     }
 
-    const entry = {
+    // Create payment entry
+    const paymentEntry = {
       date: new Date(),
-      billId,
-      amount: type === 'payment' ? -parseFloat(amount).toFixed(2) : parseFloat(amount).toFixed(2),
+      amount: -Math.abs(paymentAmount), // Ensure negative for payment
       description,
-      type
+      type: 'payment',
     };
 
-    customer.creditHistory.push(entry);
+    // Update customer
+    customer.creditHistory.push(paymentEntry);
     customer.creditBalance = parseFloat(
-      customer.creditHistory.reduce((total, entry) => total + entry.amount, 0).toFixed(2)
+      (customer.creditBalance - paymentAmount).toFixed(2)
     );
 
     await customer.save();
 
-    res.status(200).json({ message: 'Transaction added successfully', balance: customer.creditBalance });
+    return successResponse(res, 200, {
+      message: 'Payment recorded successfully',
+      newBalance: customer.creditBalance,
+    });
   } catch (error) {
-    console.error('Error adding credit/payment:', error);
-    res.status(500).json({ message: 'Error adding transaction', error: error.message });
+    console.error('Error adding payment:', error);
+    return errorResponse(res, 500, 'Failed to record payment', error);
   }
 };

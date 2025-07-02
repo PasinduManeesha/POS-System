@@ -1,37 +1,90 @@
 import User from "../models/userModel.js";
 
-
-//for login
 export const loginController = async (req, res) => {
     try {
-
-        const {userId, password} = req.body;
-        const user = await User.findOne({userId, password});
-        if(user) {
-            res.status(200).send(user);
-        } else {
-            res.json({
-                message: "Login Fail",
-                user,
+        const { userId, password } = req.body;
+        if (!userId || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "UserId and password are required"
             });
         }
 
-    } catch(error) {
-        console.log(error);
-    }
-}
+        const user = await User.findOne({ userId });
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
 
-//for register
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            user: {
+                _id: user._id,
+                name: user.name,
+                userId: user.userId,
+                verified: user.verified
+            }
+        });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error during login"
+        });
+    }
+};
+
 export const registerController = async (req, res) => {
-
     try {
+        const { name, userId, password } = req.body;
+        if (!name || !userId || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
 
-        const newUser = new User({...req.body, verified: true});
+        const existingUser = await User.findOne({ userId });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: "User already exists"
+            });
+        }
+
+        const newUser = new User({
+            name,
+            userId,
+            password,
+            verified: true
+        });
+
         await newUser.save();
-        res.status(200).send("New User Added Successfully!");
-
-    } catch(error) {
-        console.log(error);
+        res.status(201).json({
+            success: true,
+            message: "User registered successfully",
+            user: {
+                _id: newUser._id,
+                name: newUser.name,
+                userId: newUser.userId,
+                verified: newUser.verified
+            }
+        });
+    } catch (error) {
+        console.error("Registration error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error during registration"
+        });
     }
-
-}
+};

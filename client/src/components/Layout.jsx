@@ -9,15 +9,18 @@ import {
   LogoutOutlined,
   DatabaseOutlined,
   UserDeleteOutlined,
-  CarOutlined,
   ProfileOutlined ,
   FileProtectOutlined ,
-  ShoppingCartOutlined
+  
+  
 } from '@ant-design/icons';
+import Logo from '../Img/cake-shop-logo.png';
 import './layout.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Spinner from './Spinner';
+
+const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME;
 
 const { Header, Sider, Content } = Layout;
 const { SubMenu } = Menu;
@@ -40,8 +43,8 @@ const LayoutApp = ({ children }) => {
       {loading && <Spinner />}
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div className="logo">
-          <CarOutlined />
-          <h2 className="logo-title">Senuri Auto</h2>
+          <img src={Logo} alt="Logo" />;
+          <h2 className="logo-title">{COMPANY_NAME}</h2>
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={[window.location.pathname]}>
           <Menu.Item key='/' icon={<HomeOutlined />}>

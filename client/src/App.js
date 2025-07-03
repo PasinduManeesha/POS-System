@@ -13,6 +13,7 @@ import Category from "./pages/category/category";
 import Suppliers from "./pages/suppliers/suppliers";
 import Inventory from "./pages/inventory/inventory";
 import ProfitReport from "./pages/reports/profit";
+import CustomersCredit from "./pages/customers/CustomersCredit";
 //import DailyCollection from "./pages/reports/DailyCollection";
 
 function App() {
@@ -68,6 +69,14 @@ function App() {
               </ProtectedRouter>
             }
           />
+           <Route
+            path="/customers-credit"
+            element={
+              <ProtectedRouter>
+                <CustomersCredit />
+              </ProtectedRouter>
+            }
+          />
           <Route
             path="/supplier"
             element={
@@ -118,12 +127,11 @@ export function ProtectedRouter({ children }) {
 
   React.useEffect(() => {
     const auth = localStorage.getItem("auth");
-    setIsAuthenticated(!!auth); // Set true if auth exists, false otherwise
+    setIsAuthenticated(!!auth); // true if exists, false if null
   }, []);
 
   if (isAuthenticated === null) {
-    // Show a loading spinner while checking authentication
-    return <div className="loading-spinner">Loading...</div>;
+    return <div className="loading-spinner">Loading...</div>; // Optional loading UI
   }
 
   return isAuthenticated ? children : <Navigate to="/login" />;

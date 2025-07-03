@@ -6,6 +6,8 @@ import { DeleteOutlined, EditOutlined, FilterOutlined } from '@ant-design/icons'
 import { Button, Form, Input, Modal, Select, Table, message, Row, Col, Card } from 'antd';
 import FormItem from 'antd/lib/form/FormItem';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+
 const Products = () => {
   const dispatch = useDispatch();
   const [productData, setProductData] = useState([]);
@@ -24,7 +26,7 @@ const Products = () => {
   const getAllProducts = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/products/getproducts');
+      const { data } = await axios.get(`${BASE_URL}/products/getproducts`);
       setProductData(data);
       setFilteredData(data);
       dispatch({ type: 'HIDE_LOADING' });
@@ -37,7 +39,7 @@ const Products = () => {
   const getAllCategories = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/categories');
+      const { data } = await axios.get(`${BASE_URL}/categories`);
       setCategoryData(data);
     } catch (error) {
       console.log('Error fetching categories:', error);
@@ -69,7 +71,7 @@ const Products = () => {
   const handlerDelete = async (record) => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      await axios.post('https://senuri-auto-server.onrender.com/api/products/deleteproducts', {
+      await axios.post(`${BASE_URL}/products/deleteproducts`, {
         productId: record._id,
       });
       message.success('Product Deleted Successfully!');
@@ -112,13 +114,13 @@ const Products = () => {
       dispatch({ type: 'SHOW_LOADING' });
 
       if (editProduct) {
-        await axios.put('https://senuri-auto-server.onrender.com/api/products/updateproducts', {
+        await axios.put(`${BASE_URL}/products/updateproducts`, {
           ...value,
           productId: editProduct._id,
         });
         message.success('Product Updated Successfully!');
       } else {
-        await axios.post('https://senuri-auto-server.onrender.com/api/products/addproducts', value);
+        await axios.post(`${BASE_URL}/products/addproducts`, value);
         message.success('Product Added Successfully!');
       }
 

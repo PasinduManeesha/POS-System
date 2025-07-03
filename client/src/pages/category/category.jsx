@@ -5,6 +5,8 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Modal, Table, message, Card, Row, Col } from 'antd';
 import Layout from '../../components/Layout';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+
 const Category = () => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
@@ -25,7 +27,7 @@ const Category = () => {
   const getAllCategories = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/categories/');
+      const { data } = await axios.get(`${BASE_URL}/categories/`);
       setCategoryData(data);
       setFilteredData(data);
       dispatch({ type: 'HIDE_LOADING' });
@@ -76,13 +78,13 @@ const Category = () => {
       
       if (editingCategory) {
         await axios.put(
-          `https://senuri-auto-server.onrender.com/api/categories/${editingCategory._id}`,
+          `${BASE_URL}/categories/${editingCategory._id}`,
           values
         );
         message.success('Category updated successfully!');
       } else {
         await axios.post(
-          'https://senuri-auto-server.onrender.com/api/categories/',
+          `${BASE_URL}/categories/`,
           values
         );
         message.success('Category added successfully!');
@@ -104,7 +106,7 @@ const Category = () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
       await axios.delete(
-        `https://senuri-auto-server.onrender.com/api/categories/${record._id}`
+        `${BASE_URL}/categories/${record._id}`
       );
       message.success('Category deleted successfully!');
       getAllCategories();

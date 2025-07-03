@@ -67,6 +67,43 @@ const POSBilling = () => {
   const clearButton = useRef(null);
   const newDisplayButton = useRef(null);
   const saveBillRef = useRef();
+  const handlePrintRef = useRef();
+
+  // Print handling
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+    pageStyle: `
+      @page {
+        size: 80mm auto;
+        margin: 2mm;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: 'Arial', sans-serif;
+          font-size: 10pt;
+          line-height: 1.2;
+        }
+        #print-content {
+          display: block !important;
+        }
+      }
+    `,
+    removeAfterPrint: true,
+    onAfterPrint: () => {
+      // Reset form after successful printing
+      setInvoiceNumber(Math.floor(Math.random() * 100000).toString().padStart(5, "0"));
+      setSelectedProducts([]);
+      setAmountPaid("");
+      setCustomerNumber("");
+      setCustomerName(customers.find(c => c.customerName?.toLowerCase() === "cash") ? "Cash" : "");
+    }
+  });
+
+  useEffect(() => {
+    handlePrintRef.current = handlePrint;
+  }, [handlePrint]);
 
   // Generate invoice number on mount
   useEffect(() => {
@@ -252,27 +289,6 @@ const POSBilling = () => {
 
   const remainingAmount = () => (parseFloat(amountPaid || 0) - parseFloat(calculateTotal())).toFixed(2);
 
-  // Print handling
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    pageStyle: `
-      @page {
-        size: 80mm auto;
-        margin: 2mm;
-      }
-      @media print {
-        body {
-          margin: 0;
-          padding: 0;
-          font-family: 'Arial', sans-serif;
-          font-size: 10pt;
-          line-height: 1.2;
-        }
-      }
-    `,
-    removeAfterPrint: true
-  });
-
   // Save bill function
   const saveBill = useCallback(async () => {
     try {
@@ -327,12 +343,10 @@ const POSBilling = () => {
 
       message.success("Bill generated successfully!");
 
-      // Reset form
-      setInvoiceNumber(Math.floor(Math.random() * 100000).toString().padStart(5, "0"));
-      setSelectedProducts([]);
-      setAmountPaid("");
-      setCustomerNumber("");
-      setCustomerName(customers.find(c => c.customerName?.toLowerCase() === "cash") ? "Cash" : "");
+      // Trigger print after saving
+      if (handlePrintRef.current) {
+        handlePrintRef.current();
+      }
 
     } catch (error) {
       console.error("Error saving bill:", error);
@@ -722,66 +736,212 @@ const POSBilling = () => {
             </button>
           </div>
 
-          {/* Print Template */}
           <div style={{ display: "none" }}>
-            <div id="print-content" ref={componentRef} style={{ width: '76mm', fontFamily: 'Arial, sans-serif', fontSize: '10pt', lineHeight: '1.2' }}>
-              <div style={{ textAlign: 'center', marginBottom: '5mm' }}>
-                <img src={Logo} alt="Logo" style={{ width: '30mm', height: '30mm', margin: '0 auto' }} />
-                <h1 style={{ fontSize: '14pt', margin: '3mm 0' }}>{COMPANY_NAME}</h1>
-                <p style={{ fontSize: '8pt' }}>{COMPANY_ADDRESS}</p>
-                <p style={{ fontSize: '8pt' }}>Phone: {COMPANY_PHONE}</p>
-                <p style={{ fontSize: '8pt', marginTop: '2mm' }}>--------------------------------</p>
-              </div>
-              <div style={{ marginBottom: '5mm', fontSize: '8pt' }}>
-                <p><strong>Invoice No:</strong> INV-{invoiceNumber}</p>
-                <p><strong>Date:</strong> {moment(date).format('DD/MM/YYYY')}</p>
-                <p><strong>Customer:</strong> {customerName || 'N/A'}</p>
-                <p><strong>Phone:</strong> {customerNumber || 'N/A'}</p>
-                <p style={{ marginTop: '2mm' }}>--------------------------------</p>
-              </div>
-              <table style={{ width: '100%', fontSize: '8pt', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ padding: '1mm', textAlign: 'left' }}>#</th>
-                    <th style={{ padding: '1mm', textAlign: 'left' }}>Item</th>
-                    <th style={{ padding: '1mm', textAlign: 'right' }}>Price</th>
-                    <th style={{ padding: '1mm', textAlign: 'center' }}>Qty</th>
-                    <th style={{ padding: '1mm', textAlign: 'right' }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedProducts.map((product, index) => (
-                    <tr key={index}>
-                      <td style={{ padding: '1mm' }}>{index + 1}</td>
-                      <td style={{ padding: '1mm', maxWidth: '30mm', wordWrap: 'break-word' }}>
-                        {product.itemDescription} ({product.productNo})
-                      </td>
-                      <td style={{ padding: '1mm', textAlign: 'right' }}>
-                        {product.unitPrice?.toFixed(2)}
-                      </td>
-                      <td style={{ padding: '1mm', textAlign: 'center' }}>
-                        {product.quantity || 0}
-                      </td>
-                      <td style={{ padding: '1mm', textAlign: 'right' }}>
-                        {(product.unitPrice * product.quantity)?.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ marginTop: '5mm', fontSize: '8pt' }}>
-                <p style={{ marginTop: '2mm' }}>--------------------------------</p>
-                <p><strong>Subtotal:</strong> Rs {calculateTotal()}</p>
-                <p><strong>Amount Paid:</strong> Rs {amountPaid || '0.00'}</p>
-                <p><strong>Remaining:</strong> Rs {Math.abs(remainingAmount()).toFixed(2)} {remainingAmount() < 0 ? '(Credit)' : ''}</p>
-                <p><strong>Payment Method:</strong> {paymentMethod}</p>
-                <p style={{ marginTop: '2mm' }}>--------------------------------</p>
-              </div>
-              <div style={{ textAlign: 'center', marginTop: '5mm', fontSize: '8pt' }}>
-                <p>Thank you for your business!</p>
-              </div>
-            </div>
-          </div>
+  <div 
+    id="print-content" 
+    ref={componentRef} 
+    style={{ 
+      width: '76mm', 
+      fontFamily: 'Arial, sans-serif', 
+      fontSize: '10pt', 
+      lineHeight: '1.1',
+      padding: '2mm',
+      boxSizing: 'border-box',
+      fontWeight: 550  // Default bolder text
+    }}
+  >
+    {/* Header with bolder text */}
+    <div style={{ 
+      textAlign: 'center', 
+      borderBottom: '2px dashed #000',
+      paddingBottom: '3mm',
+      marginBottom: '3mm'
+    }}>
+      <img 
+        src={Logo} 
+        alt="Logo" 
+        style={{ 
+          width: '20mm',  // Slightly smaller to save space
+          height: '20mm', 
+          margin: '0 auto 2mm',
+          objectFit: 'contain'
+        }} 
+      />
+      <h1 style={{ 
+        fontSize: '14pt', 
+        margin: '0 0 1mm',
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        {COMPANY_NAME}
+      </h1>
+      <p style={{ 
+        fontSize: '8pt', 
+        margin: '0',
+        lineHeight: '1.2',
+        fontWeight: 'bold'
+      }}>
+        {COMPANY_ADDRESS}
+      </p>
+      <p style={{ 
+        fontSize: '9pt', 
+        margin: '0',
+        fontWeight: 'bold'
+      }}>
+        Tel: {COMPANY_PHONE}
+      </p>
+    </div>
+
+    {/* Invoice Info - bolder and larger */}
+    <div style={{ 
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '1mm',
+      marginBottom: '3mm',
+      fontSize: '9pt',
+      fontWeight: 'bold'
+    }}>
+      <div>
+        <span style={{ fontWeight: 'bold' }}>Invoice:</span> INV-{invoiceNumber}
+      </div>
+      <div>
+        <span style={{ fontWeight: 'bold' }}>Date:</span> {moment(date).format('DD/MM/YY')}
+      </div>
+      <div style={{ gridColumn: 'span 2' }}>
+        <span style={{ fontWeight: 'bold' }}>Customer:</span> {customerName || 'Walk-in'}
+      </div>
+      <div style={{ gridColumn: 'span 2' }}>
+        <span style={{ fontWeight: 'bold' }}>Phone:</span> {customerNumber || 'N/A'}
+      </div>
+    </div>
+
+    {/* Items Table - bolder text */}
+    <table style={{ 
+      width: '100%', 
+      fontSize: '9pt', 
+      borderCollapse: 'collapse',
+      marginBottom: '3mm',
+      fontWeight: 'bold'
+    }}>
+      <thead>
+        <tr style={{ borderBottom: '2px dashed #000' }}>
+          <th style={{ textAlign: 'left', padding: '1mm 0', width: '5%' }}>#</th>
+          <th style={{ textAlign: 'left', padding: '1mm 0', width: '35%' }}>Item</th>
+          <th style={{ textAlign: 'right', padding: '1mm 0', width: '15%' }}>Price</th>
+          <th style={{ textAlign: 'center', padding: '1mm 0', width: '15%' }}>Qty</th>
+          <th style={{ textAlign: 'right', padding: '1mm 0', width: '30%' }}>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {selectedProducts.map((product, index) => (
+          <tr key={index} style={{ borderBottom: '1px dashed #ccc' }}>
+            <td style={{ padding: '1.5mm 0', verticalAlign: 'top' }}>{index + 1}</td>
+            <td style={{ padding: '1.5mm 0', verticalAlign: 'top' }}>
+              <div style={{ fontWeight: 'bold' }}>{product.itemDescription}</div>
+              <div style={{ fontSize: '8pt' }}>({product.productNo})</div>
+            </td>
+            <td style={{ padding: '1.5mm 0', textAlign: 'right', verticalAlign: 'top' }}>
+              {product.unitPrice?.toFixed(2)}
+            </td>
+            <td style={{ padding: '1.5mm 0', textAlign: 'center', verticalAlign: 'top' }}>
+              {product.quantity || 0}
+            </td>
+            <td style={{ padding: '1.5mm 0', textAlign: 'right', verticalAlign: 'top', fontWeight: 'bold' }}>
+              {(product.unitPrice * product.quantity)?.toFixed(2)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    {/* Totals Section - emphasized numbers */}
+    <div style={{ 
+      borderTop: '2px dashed #000',
+      borderBottom: '2px dashed #000',
+      padding: '2.5mm 0',
+      marginBottom: '3mm'
+    }}>
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '2mm',
+        fontWeight: 'bold'
+      }}>
+        <span>SUBTOTAL:</span>
+        <span>Rs {calculateTotal()}</span>
+      </div>
+      
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '2mm',
+        fontWeight: 'bold'
+      }}>
+        <span>AMOUNT PAID:</span>
+        <span>Rs {amountPaid || '0.00'}</span>
+      </div>
+      
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '2mm',
+        fontWeight: 'bold'
+      }}>
+        <span>PAYMENT METHOD:</span>
+        <span>{paymentMethod}</span>
+      </div>
+      
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontWeight: 'bold',
+        fontSize: '10pt',
+        marginTop: '2mm',
+        paddingTop: '2mm',
+        borderTop: '1px dashed #ccc'
+      }}>
+        <span>BALANCE:</span>
+        <span style={{ 
+          color: remainingAmount() < 0 ? 'red' : 'inherit',
+          fontWeight: 'bold',
+          fontSize: '10pt'
+        }}>
+          Rs {Math.abs(remainingAmount()).toFixed(2)}
+          {remainingAmount() < 0 ? ' (CREDIT)' : remainingAmount() > 0 ? ' (CHANGE)' : ''}
+        </span>
+      </div>
+    </div>
+
+    {/* Footer with larger text */}
+    <div style={{ 
+      textAlign: 'center',
+      fontSize: '9pt',
+      paddingTop: '2mm',
+      fontWeight: 'bold'
+    }}>
+      <div style={{ 
+        fontWeight: 'bold', 
+        marginBottom: '2mm',
+        fontSize: '10pt'
+      }}>
+        THANK YOU FOR YOUR BUSINESS!
+      </div>
+      <div style={{ fontSize: '8pt', fontWeight: 'bold' }}>
+        {moment().format('DD MMM YYYY hh:mm A')}
+      </div>
+      <div style={{ 
+        fontSize: '8pt', 
+        marginTop: '2mm',
+        borderTop: '1px dashed #000',
+        paddingTop: '2mm',
+        fontWeight: 'bold'
+      }}>
+        <p>Software Partner CWS • Phone 076 1838000</p>  
+      </div>
+    </div>
+  </div>
+</div>
         </div>
       </div>
     </LayoutApp>

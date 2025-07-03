@@ -5,6 +5,8 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Modal, Table, message, Card, Row, Col } from 'antd';
 import Layout from '../../components/Layout';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+
 const Customers = () => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
@@ -26,7 +28,7 @@ const Customers = () => {
   const getAllCustomers = async () => {
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/customers/getcustomers');
+      const { data } = await axios.get(`${BASE_URL}/customers/getcustomers`);
       
       // Debugging: Log the raw response
       console.log('API Response:', data);
@@ -95,7 +97,7 @@ const Customers = () => {
 
     try {
       dispatch({ type: 'SHOW_LOADING' });
-      await axios.delete(`https://senuri-auto-server.onrender.com/api/customers/deletecustomer/${record._id}`);
+      await axios.delete(`${BASE_URL}/customers/deletecustomer/${record._id}`);
       message.success('Customer Deleted Successfully!');
       getAllCustomers();
     } catch (error) {
@@ -131,10 +133,10 @@ const Customers = () => {
       dispatch({ type: 'SHOW_LOADING' });
       
       if (editCustomer) {
-        await axios.put(`https://senuri-auto-server.onrender.com/api/customers/updatecustomer/${editCustomer._id}`, values);
+        await axios.put(`${BASE_URL}/customers/updatecustomer/${editCustomer._id}`, values);
         message.success('Customer Updated Successfully!');
       } else {
-        await axios.post('https://senuri-auto-server.onrender.com/api/customers/addcustomer', values);
+        await axios.post(`${BASE_URL}/customers/addcustomer`, values);
         message.success('Customer Added Successfully!');
       }
       

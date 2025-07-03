@@ -1,17 +1,27 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-//for create table into db
 const userSchema = new mongoose.Schema({
-
-    name: { type: String, required: true },
-    userId: {type: String, required: true},
-    password: {type: String, required: true},
-    verified: {type: Boolean}
-
+    name: { type: String, required: true, trim: true },
+    userId: { type: String, required: true, unique: true, trim: true },
+    password: { type: String, required: true },
+    verified: { type: Boolean, default: false }
 }, {
-    //for date
     timestamps: true
 });
+
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+    if (this.isModified('password')) {
+        this.password = await bcrypt.hash(this.password, 10);
+    }
+    next();
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
 
 const User = mongoose.model("User", userSchema);
 export default User;

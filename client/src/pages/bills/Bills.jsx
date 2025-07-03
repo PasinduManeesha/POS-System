@@ -6,6 +6,8 @@ import { EyeOutlined, FilterOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import Layout from '../../components/Layout';
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL ;
+
 const Bills = () => {
     const componentRef = useRef();
     const dispatch = useDispatch();
@@ -22,7 +24,7 @@ const Bills = () => {
     const getAllBills = async () => {
         try {
             dispatch({ type: "SHOW_LOADING" });
-            const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/bills/getbills');
+            const { data } = await axios.get(`${BASE_URL}/bills/getbills`);
             setBillsData(data.data || []);
             setFilteredData(data.data || []);
         } catch (error) {
@@ -85,6 +87,9 @@ const Bills = () => {
                     left: 0;
                     top: 0;
                     width: 100%;
+                }
+                #print-content h2 {
+                    display: none !important;
                 }
                 .no-print {
                     display: none !important;

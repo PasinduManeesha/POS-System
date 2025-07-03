@@ -9,15 +9,18 @@ import {
   LogoutOutlined,
   DatabaseOutlined,
   UserDeleteOutlined,
-  CarOutlined,
   ProfileOutlined ,
   FileProtectOutlined ,
-  ShoppingCartOutlined
+  
+  
 } from '@ant-design/icons';
+import Logo from '../Img/cake-shop-logo.png';
 import './layout.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Spinner from './Spinner';
+
+const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME;
 
 const { Header, Sider, Content } = Layout;
 const { SubMenu } = Menu;
@@ -40,8 +43,8 @@ const LayoutApp = ({ children }) => {
       {loading && <Spinner />}
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div className="logo">
-          <CarOutlined />
-          <h2 className="logo-title">Senuri Auto</h2>
+          <img src={Logo} alt="Logo" style={{ width: '100px', height: '100px' }} />
+          <h2 className="logo-title">{COMPANY_NAME}</h2>
         </div>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={[window.location.pathname]}>
           <Menu.Item key='/' icon={<HomeOutlined />}>
@@ -56,9 +59,17 @@ const LayoutApp = ({ children }) => {
           <Menu.Item key="/inventory" icon={<HomeOutlined />}>
             <Link to="/inventory">Inventory</Link>
           </Menu.Item>
+          
+
+          <SubMenu key="Customers" icon={<UserSwitchOutlined />} title="Customers">
           <Menu.Item key='/customers' icon={<UserSwitchOutlined />}>
             <Link to="/customers">Customers</Link>
           </Menu.Item>
+            <Menu.Item key="/customers-credit" icon={<UserSwitchOutlined />}>
+              <Link to="/customers-credit">Customer Credit</Link>
+            </Menu.Item>
+          </SubMenu>
+
           <Menu.Item key='/supplier' icon={<UserDeleteOutlined />}>
             <Link to="/supplier">Suppliers</Link>
           </Menu.Item>

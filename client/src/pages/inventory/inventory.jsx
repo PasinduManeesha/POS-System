@@ -2,8 +2,10 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import LayoutApp from '../../components/Layout';
-import { EditOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { EditOutlined, SearchOutlined } from '@ant-design/icons';
 import { Button, Card, Form, Input, Modal, Select, Table, message } from 'antd';
+
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 const Inventory = () => {
   const dispatch = useDispatch();
@@ -13,22 +15,16 @@ const Inventory = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [form] = Form.useForm();
   const [categories, setCategories] = useState([]);
-  const [filters, setFilters] = useState({
-    productName: '',
-    category: ''
-  });
+  const [filters, setFilters] = useState({ productName: '', category: '' });
 
   const getAllInventory = async () => {
     try {
       dispatch({ type: "SHOW_LOADING" });
-      const { data } = await axios.get('https://senuri-auto-server.onrender.com/api/products/getproducts');
+      const { data } = await axios.get(`${BASE_URL}/products/getproducts`);
       setInventoryData(data);
       setFilteredData(data);
-
-      // Extract unique categories
       const uniqueCategories = [...new Set(data.map(item => item.category))];
       setCategories(uniqueCategories);
-
       dispatch({ type: "HIDE_LOADING" });
     } catch (error) {
       dispatch({ type: "HIDE_LOADING" });
@@ -44,7 +40,6 @@ const Inventory = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Apply filters whenever filters or inventoryData changes
   useEffect(() => {
     const filtered = inventoryData.filter(item => {
       const matchesName = item.name.toLowerCase().includes(filters.productName.toLowerCase());
@@ -57,19 +52,11 @@ const Inventory = () => {
   const openModal = (product) => {
     setSelectedProduct(product);
     setPopModal(true);
-    setTimeout(() => {
-      form.setFieldsValue({
-        currentStock: product.stockQuantity,
-        adjustment: 0,
-        addedCost: 0,
-      });
-    }, 100);
   };
 
   const handleAdjustStock = async (values) => {
     try {
       dispatch({ type: "SHOW_LOADING" });
-
       const adjustment = Number(values.adjustment);
       const addedCost = Number(values.addedCost);
       const preCost = Number(selectedProduct.cost);
@@ -86,13 +73,12 @@ const Inventory = () => {
       }
 
       let finalCost = preCost;
-
       if (adjustment > 0 && addedCost >= 0) {
         finalCost = ((preCost * preQty) + (addedCost * adjustment)) / (preQty + adjustment);
         finalCost = parseFloat(finalCost.toFixed(2));
       }
 
-      await axios.post('https://senuri-auto-server.onrender.com/api/inventory/adjust-stock', {
+      await axios.post(`${BASE_URL}/inventory/adjust-stock`, {
         productId: selectedProduct._id,
         adjustment: adjustment,
         cost: finalCost,
@@ -111,17 +97,11 @@ const Inventory = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const resetFilters = () => {
-    setFilters({
-      productName: '',
-      category: ''
-    });
+    setFilters({ productName: '', category: '' });
   };
 
   const columns = [
@@ -148,13 +128,7 @@ const Inventory = () => {
   return (
     <LayoutApp>
       <h2>Inventory Management</h2>
-
-      {/* Filter Section */}
-      <Card
-        
-        style={{ marginBottom: 20 }}
-        bordered={false}
-      >
+      <Card style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label>Product Name</label>
@@ -166,7 +140,6 @@ const Inventory = () => {
               prefix={<SearchOutlined />}
             />
           </div>
-
           <div style={{ flex: 1, minWidth: 200 }}>
             <label>Category</label>
             <Select
@@ -184,26 +157,12 @@ const Inventory = () => {
               ))}
             </Select>
           </div>
-
-          <Button
-            type="default"
-            onClick={resetFilters}
-            style={{ marginTop: 20 }}
-          >
+          <Button onClick={resetFilters} style={{ marginTop: 20 }}>
             Reset Filters
           </Button>
         </div>
       </Card>
-
-      {/* Inventory Table */}
-      <Table
-        dataSource={filteredData}
-        columns={columns}
-        bordered
-        rowKey="_id"
-      />
-
-      {/* Stock Adjustment Modal */}
+      <Table dataSource={filteredData} columns={columns} rowKey="_id" />
       <Modal
         title={`Adjust Stock - ${selectedProduct?.name}`}
         visible={popModal}
@@ -215,27 +174,26 @@ const Inventory = () => {
         footer={null}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleAdjustStock}>
+        <Form form={form} layout="vertical" onFinish={handleAdjustStock} initialValues={{ adjustment: 0, addedCost: 0 }}>
           <Form.Item label="Current Stock">
             <Input disabled value={selectedProduct?.stockQuantity} />
           </Form.Item>
-
           <Form.Item
             label="Adjustment Amount"
             name="adjustment"
             rules={[{ required: true, message: 'Please enter adjustment amount' }]}
+            extra="Enter a positive number to add stock, or a negative number to deduct stock."
           >
-            <Input type="number" placeholder="Positive to add, negative to deduct" />
+            <Input type="number" placeholder="e.g., 10 or -5" />
           </Form.Item>
-
           <Form.Item
             label="Cost for Added Stock"
             name="addedCost"
             rules={[{ required: true, message: 'Please enter cost' }]}
+            extra="This cost will be used to calculate the new average cost when adding stock. Ignored when deducting stock."
           >
-            <Input type="number" step="0.01" placeholder="Only used when adding stock" />
+            <Input type="number" step="0.01" placeholder="e.g., 15.00" />
           </Form.Item>
-
           <Form.Item>
             <Button type="primary" htmlType="submit">
               Adjust Stock

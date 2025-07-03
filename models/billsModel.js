@@ -29,25 +29,16 @@ const billSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['pending', 'completed', 'cancelled'],
-        default: 'completed'
+        required: true // Remove default to enforce explicit status
     }
 }, { timestamps: true });
-
-
 
 billSchema.pre("save", async function (next) {
   if (!this.isNew) return next(); 
 
   try {
-    
     const lastBill = await Bills.findOne().sort({ billNumber: -1 });
-
-    if (lastBill) {
-      this.billNumber = lastBill.billNumber + 1; 
-    } else {
-      this.billNumber = 1; 
-    }
-
+    this.billNumber = lastBill ? lastBill.billNumber + 1 : 1;
     console.log("Generated Bill Number:", this.billNumber);
     next();
   } catch (err) {
@@ -55,7 +46,6 @@ billSchema.pre("save", async function (next) {
     next(err);
   }
 });
-
 
 const Bills = mongoose.model("Bills", billSchema);
 export default Bills;

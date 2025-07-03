@@ -99,68 +99,59 @@ const CustomersCredit = () => {
     }
   };
 
-  const handlePaymentSubmit = async (values) => {
-    try {
-      console.log('Submitting payment with values:', values);
-      Modal.confirm({
-        title: 'Confirm Payment',
-        content: `Are you sure you want to record a payment of Rs${parseFloat(values.amount).toFixed(2)} for ${selectedCustomer?.customerName}?`,
-        onOk: async () => {
-          setPaymentLoading(true);
-          const paymentAmount = parseFloat(values.amount);
-          if (!selectedCustomer?._id) throw new Error('No customer selected');
+const handlePaymentSubmit = async (values) => {
+  try {
+    Modal.confirm({
+      title: 'Confirm Payment',
+      content: `Are you sure you want to record a payment of Rs${parseFloat(values.amount).toFixed(2)} for ${selectedCustomer?.customerName}?`,
+      onOk: async () => {
+        setPaymentLoading(true);
+        const paymentAmount = parseFloat(values.amount);
+        
+        const { data } = await axios.post(`${BASE_URL}/customers/${selectedCustomer._id}/payments`, {
+          amount: paymentAmount,
+          description: values.notes || 'Credit payment',
+        });
 
-          const { data } = await axios.post(`${BASE_URL}/customers/${selectedCustomer._id}/payments`, {
-            amount: paymentAmount,
-            description: values.notes || 'Credit payment',
+        if (data?.success) {
+          message.success(`Payment of Rs${paymentAmount.toFixed(2)} recorded successfully!`);
+          setPaymentModalVisible(false);
+          paymentForm.resetFields();
+
+          // Update local state
+          const updatedCustomers = customerData.map((customer) => {
+            if (customer._id === selectedCustomer._id) {
+              return {
+                ...customer,
+                creditBalance: data.newBalance,
+              };
+            }
+            return customer;
           });
 
-          if (data?.success) {
-            message.success(`Payment of Rs${paymentAmount.toFixed(2)} recorded successfully!`);
-            setPaymentModalVisible(false);
-            paymentForm.resetFields();
-
-            const updatedCustomers = customerData.map((customer) => {
-              if (customer._id === selectedCustomer._id) {
-                return {
-                  ...customer,
-                  creditBalance: data.newBalance || customer.creditBalance - paymentAmount,
-                  creditHistory: [
-                    ...(customer.creditHistory || []),
-                    {
-                      amount: -paymentAmount,
-                      description: values.notes || 'Credit payment',
-                      type: 'payment',
-                      date: new Date(),
-                    },
-                  ],
-                };
-              }
-              return customer;
-            });
-
-            setCustomerData(updatedCustomers);
-            if (creditHistoryModalVisible) {
-              await getCreditHistory(selectedCustomer._id);
-            }
-            setSelectedCustomer({
-              ...selectedCustomer,
-              creditBalance: data.newBalance || selectedCustomer.creditBalance - paymentAmount,
-            });
-          } else {
-            throw new Error(data.message || 'Payment failed');
+          setCustomerData(updatedCustomers);
+          setSelectedCustomer(prev => ({
+            ...prev,
+            creditBalance: data.newBalance
+          }));
+          
+          if (creditHistoryModalVisible) {
+            await getCreditHistory(selectedCustomer._id);
           }
-        },
-        onCancel: () => {
-          setPaymentLoading(false);
-        },
-      });
-    } catch (error) {
-      console.error('Payment error:', error);
-      message.error(error.response?.data?.message || 'Failed to process payment');
-      setPaymentLoading(false);
-    }
-  };
+        } else {
+          throw new Error(data?.message || 'Payment failed');
+        }
+      },
+      onCancel: () => {
+        setPaymentLoading(false);
+      },
+    });
+  } catch (error) {
+    console.error('Payment error:', error);
+    message.error(error.response?.data?.message || 'Failed to process payment');
+    setPaymentLoading(false);
+  }
+};
 
   const handleTableChange = (pagination) => {
     console.log('Table pagination changed:', pagination);

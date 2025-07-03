@@ -139,7 +139,7 @@ export const updateCustomer = async (req, res) => {
       });
 
       if (existingCustomer) {
-        return errorResponse(res, 409, 'Another customer already uses this phone number');
+        return errorResponse(res, 409, 'Anotherjukes this phone number');
       }
       updateData.customerPhone = cleanPhone;
     }
@@ -247,57 +247,47 @@ export const getCustomerBalance = async (req, res) => {
 
 export const addCreditPayment = async (req, res) => {
   try {
+    const { id } = req.params;
     const { amount, description = 'Credit payment' } = req.body;
-    const { id: customerId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return errorResponse(res, 400, 'Invalid customer ID');
+    // Validate input
+    if (!amount || isNaN(amount)) {
+      return errorResponse(res, 400, 'Amount is required and must be a number');
     }
 
-    if (!amount || isNaN(amount) || amount <= 0) {
-      return errorResponse(res, 400, 'Valid payment amount is required (must be greater than 0)');
+    const paymentAmount = parseFloat(amount);
+    if (paymentAmount <= 0) {
+      return errorResponse(res, 400, 'Amount must be greater than 0');
     }
 
-    const customer = await Customer.findById(customerId);
+    // Find customer
+    const customer = await Customer.findById(id);
     if (!customer) {
       return errorResponse(res, 404, 'Customer not found');
     }
 
-    const paymentAmount = parseFloat(amount).toFixed(2);
-
-    console.log(`Adding payment entry for customer ${customerId}:`, {
-      amount: -parseFloat(paymentAmount),
-      description,
-      type: 'payment',
-    });
-
-    customer.creditHistory.push({
-      amount: -parseFloat(paymentAmount),
-      description,
-      type: 'payment',
+    // Create payment entry
+    const paymentEntry = {
       date: new Date(),
-    });
+      amount: -Math.abs(paymentAmount), // Ensure negative for payment
+      description,
+      type: 'payment',
+    };
 
+    // Update customer
+    customer.creditHistory.push(paymentEntry);
     customer.creditBalance = parseFloat(
-      customer.creditHistory.reduce((total, entry) => total + entry.amount, 0).toFixed(2)
+      (customer.creditBalance - paymentAmount).toFixed(2)
     );
-
-    if (customer.creditBalance < 0) {
-      return errorResponse(res, 400, 'Payment would result in negative balance');
-    }
 
     await customer.save();
 
     return successResponse(res, 200, {
+      message: 'Payment recorded successfully',
       newBalance: customer.creditBalance,
-      payment: {
-        amount: parseFloat(paymentAmount),
-        date: new Date(),
-        description,
-      },
     });
   } catch (error) {
-    console.error('Error processing payment:', error);
-    return errorResponse(res, 500, 'Server error while processing payment', error.message);
+    console.error('Error adding payment:', error);
+    return errorResponse(res, 500, 'Failed to record payment', error);
   }
 };

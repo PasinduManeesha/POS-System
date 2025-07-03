@@ -127,12 +127,11 @@ export function ProtectedRouter({ children }) {
 
   React.useEffect(() => {
     const auth = localStorage.getItem("auth");
-    setIsAuthenticated(!!auth); // Set true if auth exists, false otherwise
+    setIsAuthenticated(!!auth); // true if exists, false if null
   }, []);
 
   if (isAuthenticated === null) {
-    // Show a loading spinner while checking authentication
-    return <div className="loading-spinner">Loading...</div>;
+    return <div className="loading-spinner">Loading...</div>; // Optional loading UI
   }
 
   return isAuthenticated ? children : <Navigate to="/login" />;

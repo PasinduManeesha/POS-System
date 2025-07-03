@@ -22,6 +22,7 @@ export const addBillsController = async (req, res) => {
       cartItems,
       createdAt = new Date(),
       invoiceNumber,
+      status
     } = req.body;
 
     // Validate required fields
@@ -63,6 +64,9 @@ export const addBillsController = async (req, res) => {
     // Calculate profit
     const calculatedProfit = parseFloat(totalAmount - totalCost).toFixed(2);
 
+    // Determine bill status
+    const billStatus = isCredit && parsedCreditAmount > 0 ? 'pending' : 'completed';
+
     // Create new bill
     const newBill = new Bills({
       invoiceNumber,
@@ -90,7 +94,7 @@ export const addBillsController = async (req, res) => {
         totalItemCost: parseFloat(item.cost * item.quantity).toFixed(2),
       })),
       createdAt,
-      status: 'completed',
+      status: billStatus
     });
 
     // Update product stock
@@ -131,6 +135,7 @@ export const addBillsController = async (req, res) => {
             totalAmount: savedBill.totalAmount,
             creditAmount: savedBill.creditAmount,
             isCredit: savedBill.isCredit,
+            status: savedBill.status
           },
         });
       }
@@ -141,14 +146,12 @@ export const addBillsController = async (req, res) => {
         billId: savedBill._id,
         amount: parseFloat(parsedCreditAmount).toFixed(2),
         description: `Credit sale INV-${invoiceNumber}`,
-        type: 'credit',
+        type: 'credit'
       };
 
       console.log(`Adding credit entry for customer ${customer}:`, creditEntry);
 
       customerDoc.creditHistory.push(creditEntry);
-
-      // Update credit balance
       customerDoc.creditBalance = parseFloat(
         customerDoc.creditHistory.reduce((total, entry) => total + entry.amount, 0).toFixed(2)
       );
@@ -168,6 +171,7 @@ export const addBillsController = async (req, res) => {
         totalAmount: savedBill.totalAmount,
         creditAmount: savedBill.creditAmount,
         isCredit: savedBill.isCredit,
+        status: savedBill.status
       },
     });
   } catch (error) {

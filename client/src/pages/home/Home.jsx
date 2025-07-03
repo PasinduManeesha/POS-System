@@ -9,10 +9,6 @@ import moment from "moment";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-
-
-
-
 const POSBilling = () => {
   // State declarations
   const [invoiceNumber, setInvoiceNumber] = useState("");

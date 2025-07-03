@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 import LayoutApp from '../../components/Layout';
@@ -214,7 +215,7 @@ const POSBilling = () => {
       totalCost: (parseFloat(newProduct.cost || 0) * parseInt(newProduct.quantity)),
       profit: ((parseFloat(newProduct.unitPrice) - parseFloat(newProduct.cost || 0)) * parseInt(newProduct.quantity))
     };
-    setSelectedProducts(prev => editingIndex !== null 
+    setSelectedProducts(prev => editingIndex !== null
       ? prev.map((item, i) => i === editingIndex ? productWithCost : item)
       : [...prev, productWithCost]
     );
@@ -233,7 +234,7 @@ const POSBilling = () => {
       productNo: product.productNo,
       itemDescription: product.itemDescription,
       unitPrice: product.unitPrice,
-      quantity: product.quantity,
+      quantity : product.quantity,
       cost: product.cost
     });
     setEditingIndex(index);
@@ -250,7 +251,9 @@ const POSBilling = () => {
 
   const calculateProfit = () => (parseFloat(calculateTotal()) - parseFloat(calculateTotalCost())).toFixed(2);
 
-  const remainingAmount = () => (parseFloat(amountPaid || 0) - parseFloat(calculateTotal())).toFixed(2);
+  const remainingAmount = () => (parseFloat(amountPaid || 0) -
+
+ parseFloat(calculateTotal())).toFixed(2);
 
   // Print handling
   const handlePrint = useReactToPrint({
@@ -267,10 +270,10 @@ const POSBilling = () => {
         message.error("Please enter customer details");
         return;
       }
-      
+
       const subTotal = parseFloat(calculateTotal());
       const remaining = parseFloat(remainingAmount());
-      
+
       if (customerName.toLowerCase() === "cash" && remaining < 0) {
         message.error("Cash customers cannot have credit");
         return;
@@ -307,26 +310,19 @@ const POSBilling = () => {
 
       // Update customer balance for credit transactions (unpaid)
       if (remaining < 0 && customerId && customerName.toLowerCase() !== "cash") {
-        // const creditResponse = await axios.post(`${BASE_URL}/customers/${customerId}/payments`, {
-        //   amount: Math.abs(remaining),
-        //   billId: response.data.data.billId,
-        //   description: `Unpaid credit sale INV-${invoiceNumber}`,
-        //   type: 'credit'
-        // });
         const balanceRes = await axios.get(`${BASE_URL}/customers/${customerId}/balance`);
         setCustomerBalance(balanceRes.data.balance || 0);
       }
 
-      handlePrint();
       message.success("Bill generated successfully!");
-      
+
       // Reset form
       setInvoiceNumber(Math.floor(Math.random() * 100000).toString().padStart(5, "0"));
       setSelectedProducts([]);
       setAmountPaid("");
       setCustomerNumber("");
       setCustomerName(customers.find(c => c.customerName?.toLowerCase() === "cash") ? "Cash" : "");
-      
+
     } catch (error) {
       console.error("Error saving bill:", error);
       message.error(error.response?.data?.message || "Failed to save bill");
@@ -368,7 +364,7 @@ const POSBilling = () => {
         newDisplayButton.current?.click();
       }
     };
-  
+
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [customerName, selectedProducts]);
@@ -378,7 +374,7 @@ const POSBilling = () => {
       <div className="p-6 min-h-screen flex justify-center items-center">
         <div className="bg-white p-6 w-full max-w-4xl rounded">
           <h2 className="text-lg font-bold mb-4">Billing System</h2>
-          
+
           {/* Action Button */}
           <Button
             className="add-new"
@@ -417,20 +413,20 @@ const POSBilling = () => {
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Invoice Number</label>
-              <input 
-                type="text" 
-                value={`INV-${invoiceNumber}`} 
-                readOnly 
-                className="mt-1 block w-full border p-2" 
+              <input
+                type="text"
+                value={`INV-${invoiceNumber}`}
+                readOnly
+                className="mt-1 block w-full border p-2"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Date</label>
-              <input 
-                type="date" 
-                value={date} 
-                readOnly 
-                className="mt-1 block w-full border p-2" 
+              <input
+                type="date"
+                value={date}
+                readOnly
+                className="mt-1 block w-full border p-2"
               />
             </div>
             <div className="relative">
@@ -574,8 +570,8 @@ const POSBilling = () => {
               />
             </div>
           </div>
-          <button 
-            onClick={addProduct} 
+          <button
+            onClick={addProduct}
             className="mt-2 add-to-cart-btn bg-blue-500 text-white p-2 addToCardBtn rounded"
             disabled={isLoading}
           >
@@ -719,7 +715,7 @@ const POSBilling = () => {
           <div style={{ display: "none" }}>
             <div id="print-content" ref={componentRef} style={{ padding: '20mm', fontFamily: 'Arial, sans-serif' }}>
               <div style={{ textAlign: 'center', marginBottom: '20mm' }}>
-               <img src={Logo} alt="Logo" style={{ width: '50px', height: '50px' }} />
+                <img src={Logo} alt="Logo" style={{ width: '50px', height: '50px' }} />
                 <h1 style={{ fontSize: '24pt', marginBottom: '5mm' }}>{COMPANY_NAME}</h1>
                 <p style={{ fontSize: '12pt' }}>{COMPANY_ADDRESS}</p>
                 <p style={{ fontSize: '10pt' }}>Phone: {COMPANY_PHONE}</p>

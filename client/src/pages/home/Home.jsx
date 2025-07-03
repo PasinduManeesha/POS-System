@@ -174,7 +174,7 @@ const POSBilling = () => {
 
   const filterProducts = (input) => {
     const filtered = isTypingProductNumber
-      ? allftProducts.filter(p => p.productNo?.startsWith(input))
+      ? allProducts.filter(p => p.productNo?.startsWith(input))
       : allProducts.filter(p => p.name?.toLowerCase().includes(input.toLowerCase()));
     setFilteredProducts(filtered);
     setShowProductDropdown(true);

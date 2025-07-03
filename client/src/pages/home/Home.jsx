@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 import LayoutApp from '../../components/Layout';
@@ -175,7 +174,7 @@ const POSBilling = () => {
 
   const filterProducts = (input) => {
     const filtered = isTypingProductNumber
-      ? allProducts.filter(p => p.productNo?.startsWith(input))
+      ? allftProducts.filter(p => p.productNo?.startsWith(input))
       : allProducts.filter(p => p.name?.toLowerCase().includes(input.toLowerCase()));
     setFilteredProducts(filtered);
     setShowProductDropdown(true);
@@ -234,7 +233,7 @@ const POSBilling = () => {
       productNo: product.productNo,
       itemDescription: product.itemDescription,
       unitPrice: product.unitPrice,
-      quantity : product.quantity,
+      quantity: product.quantity,
       cost: product.cost
     });
     setEditingIndex(index);
@@ -251,14 +250,26 @@ const POSBilling = () => {
 
   const calculateProfit = () => (parseFloat(calculateTotal()) - parseFloat(calculateTotalCost())).toFixed(2);
 
-  const remainingAmount = () => (parseFloat(amountPaid || 0) -
-
- parseFloat(calculateTotal())).toFixed(2);
+  const remainingAmount = () => (parseFloat(amountPaid || 0) - parseFloat(calculateTotal())).toFixed(2);
 
   // Print handling
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
-    pageStyle: `@page { size: A4; margin: 10mm; }`,
+    pageStyle: `
+      @page {
+        size: 80mm auto;
+        margin: 2mm;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: 'Arial', sans-serif;
+          font-size: 10pt;
+          line-height: 1.2;
+        }
+      }
+    `,
     removeAfterPrint: true
   });
 
@@ -713,62 +724,61 @@ const POSBilling = () => {
 
           {/* Print Template */}
           <div style={{ display: "none" }}>
-            <div id="print-content" ref={componentRef} style={{ padding: '20mm', fontFamily: 'Arial, sans-serif' }}>
-              <div style={{ textAlign: 'center', marginBottom: '20mm' }}>
-                <img src={Logo} alt="Logo" style={{ width: '50px', height: '50px' }} />
-                <h1 style={{ fontSize: '24pt', marginBottom: '5mm' }}>{COMPANY_NAME}</h1>
-                <p style={{ fontSize: '12pt' }}>{COMPANY_ADDRESS}</p>
-                <p style={{ fontSize: '10pt' }}>Phone: {COMPANY_PHONE}</p>
+            <div id="print-content" ref={componentRef} style={{ width: '76mm', fontFamily: 'Arial, sans-serif', fontSize: '10pt', lineHeight: '1.2' }}>
+              <div style={{ textAlign: 'center', marginBottom: '5mm' }}>
+                <img src={Logo} alt="Logo" style={{ width: '30mm', height: '30mm', margin: '0 auto' }} />
+                <h1 style={{ fontSize: '14pt', margin: '3mm 0' }}>{COMPANY_NAME}</h1>
+                <p style={{ fontSize: '8pt' }}>{COMPANY_ADDRESS}</p>
+                <p style={{ fontSize: '8pt' }}>Phone: {COMPANY_PHONE}</p>
+                <p style={{ fontSize: '8pt', marginTop: '2mm' }}>--------------------------------</p>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10mm' }}>
-                <div>
-                  <p><strong>Invoice No:</strong> INV-{invoiceNumber}</p>
-                  <p><strong>Date:</strong> {moment(date).format('DD/MM/YYYY')}</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p><strong>Customer:</strong> {customerName || 'N/A'}</p>
-                  <p><strong>Phone:</strong> {customerNumber || 'N/A'}</p>
-                </div>
+              <div style={{ marginBottom: '5mm', fontSize: '8pt' }}>
+                <p><strong>Invoice No:</strong> INV-{invoiceNumber}</p>
+                <p><strong>Date:</strong> {moment(date).format('DD/MM/YYYY')}</p>
+                <p><strong>Customer:</strong> {customerName || 'N/A'}</p>
+                <p><strong>Phone:</strong> {customerNumber || 'N/A'}</p>
+                <p style={{ marginTop: '2mm' }}>--------------------------------</p>
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20mm' }}>
+              <table style={{ width: '100%', fontSize: '8pt', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ backgroundColor: '#f0f0f0' }}>
-                    <th style={{ padding: '5mm', border: '1px solid #ddd' }}>#</th>
-                    <th style={{ padding: '5mm', border: '1px solid #ddd' }}>Description</th>
-                    <th style={{ padding: '5mm', border: '1px solid #ddd' }}>Price</th>
-                    <th style={{ padding: '5mm', border: '1px solid #ddd' }}>Qty</th>
-                    <th style={{ padding: '5mm', border: '1px solid #ddd' }}>Total</th>
+                  <tr>
+                    <th style={{ padding: '1mm', textAlign: 'left' }}>#</th>
+                    <th style={{ padding: '1mm', textAlign: 'left' }}>Item</th>
+                    <th style={{ padding: '1mm', textAlign: 'right' }}>Price</th>
+                    <th style={{ padding: '1mm', textAlign: 'center' }}>Qty</th>
+                    <th style={{ padding: '1mm', textAlign: 'right' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedProducts.map((product, index) => (
                     <tr key={index}>
-                      <td style={{ padding: '5mm', border: '1px solid #ddd' }}>{index + 1}</td>
-                      <td style={{ padding: '5mm', border: '1px solid #ddd' }}>
+                      <td style={{ padding: '1mm' }}>{index + 1}</td>
+                      <td style={{ padding: '1mm', maxWidth: '30mm', wordWrap: 'break-word' }}>
                         {product.itemDescription} ({product.productNo})
                       </td>
-                      <td style={{ padding: '5mm', border: '1px solid #ddd', textAlign: 'right' }}>
-                        Rs {product.unitPrice?.toFixed(2) || '0.00'}
+                      <td style={{ padding: '1mm', textAlign: 'right' }}>
+                        {product.unitPrice?.toFixed(2)}
                       </td>
-                      <td style={{ padding: '5mm', border: '1px solid #ddd', textAlign: 'center' }}>
+                      <td style={{ padding: '1mm', textAlign: 'center' }}>
                         {product.quantity || 0}
                       </td>
-                      <td style={{ padding: '5mm', border: '1px solid #ddd', textAlign: 'right' }}>
-                        Rs {(product.unitPrice * product.quantity)?.toFixed(2)}
+                      <td style={{ padding: '1mm', textAlign: 'right' }}>
+                        {(product.unitPrice * product.quantity)?.toFixed(2)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div style={{ textAlign: 'right', marginBottom: '10mm' }}>
+              <div style={{ marginTop: '5mm', fontSize: '8pt' }}>
+                <p style={{ marginTop: '2mm' }}>--------------------------------</p>
                 <p><strong>Subtotal:</strong> Rs {calculateTotal()}</p>
                 <p><strong>Amount Paid:</strong> Rs {amountPaid || '0.00'}</p>
-                <p><strong>Remaining Amount:</strong> Rs {Math.abs(remainingAmount()).toFixed(2)} {remainingAmount() < 0 ? '(Credit)' : ''}</p>
+                <p><strong>Remaining:</strong> Rs {Math.abs(remainingAmount()).toFixed(2)} {remainingAmount() < 0 ? '(Credit)' : ''}</p>
                 <p><strong>Payment Method:</strong> {paymentMethod}</p>
+                <p style={{ marginTop: '2mm' }}>--------------------------------</p>
               </div>
-              <div style={{ textAlign: 'center', marginTop: '20mm', fontSize: '10pt' }}>
+              <div style={{ textAlign: 'center', marginTop: '5mm', fontSize: '8pt' }}>
                 <p>Thank you for your business!</p>
-                <p>Please retain this invoice for your records.</p>
               </div>
             </div>
           </div>

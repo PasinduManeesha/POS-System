@@ -13,11 +13,8 @@ const COMPANY_NAME = process.env.REACT_APP_COMPANY_NAME;
 const COMPANY_ADDRESS = process.env.REACT_APP_COMPANY_ADDRESS;
 const COMPANY_PHONE = process.env.REACT_APP_COMPANY_PHONE;
 
-<<<<<<< HEAD
-=======
 console.log("BASE_URL:", COMPANY_NAME, COMPANY_ADDRESS, COMPANY_PHONE);
 
->>>>>>> remote/Janith
 const POSBilling = () => {
   // State declarations
   const [invoiceNumber, setInvoiceNumber] = useState("");

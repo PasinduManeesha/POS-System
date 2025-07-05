@@ -160,13 +160,20 @@ const POSBilling = () => {
   const handleCustomerKeyDown = (e) => {
     if (!showCustomerDropdown || filteredCustomers.length === 0) return;
     if (e.key === 'ArrowDown') {
-      setHighlightedCustomerIndex(prev => Math.min(prev + 1, filteredCustomers.length - 1));
+      setHighlightedCustomerIndex((prev) =>
+        prev < filteredCustomers.length - 1 ? prev + 1 : 0
+      );
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
-      setHighlightedCustomerIndex(prev => Math.max(prev - 1, 0));
+      setHighlightedCustomerIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredCustomers.length - 1
+      );
       e.preventDefault();
-    } else if (e.key === 'Enter' && highlightedCustomerIndex >= 0) {
-      selectCustomer(filteredCustomers[highlightedCustomerIndex]);
+    } else if (e.key === 'Enter') {
+      if (highlightedCustomerIndex >= 0) {
+        selectCustomer(filteredCustomers[highlightedCustomerIndex]);
+        setTimeout(() => productNoRef.current?.focus(), 0);
+      }
       e.preventDefault();
     }
   };
@@ -398,16 +405,7 @@ const POSBilling = () => {
     <LayoutApp>
       <div className="p-6 min-h-screen flex justify-center items-center">
         <div className="bg-white p-6 w-full max-w-4xl rounded">
-          <h2 className="text-lg font-bold mb-4">Billing System</h2>
 
-          {/* Action Button */}
-          <Button
-            className="add-new"
-            type="primary"
-            onClick={() => setPopModal(true)}
-          >
-            Shortcuts
-          </Button>
 
           {/* Modal */}
           <Modal
@@ -461,21 +459,55 @@ const POSBilling = () => {
                 placeholder="Customer Number"
                 value={customerNumber}
                 onChange={handleCustomerNumberChange}
-                onKeyDown={handleCustomerKeyDown}
+                onFocus={() => {
+                  setShowCustomerDropdown(true);
+                  setIsTypingCustomerNumber(true);
+                  filterCustomers(customerNumber);
+                  setHighlightedCustomerIndex(0);
+                }}
+                onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
+                onKeyDown={(e) => {
+                  if (showCustomerDropdown && filteredCustomers.length > 0) {
+                    if (e.key === 'ArrowDown') {
+                      setHighlightedCustomerIndex((prev) =>
+                        prev < filteredCustomers.length - 1 ? prev + 1 : 0
+                      );
+                      e.preventDefault();
+                    } else if (e.key === 'ArrowUp') {
+                      setHighlightedCustomerIndex((prev) =>
+                        prev > 0 ? prev - 1 : filteredCustomers.length - 1
+                      );
+                      e.preventDefault();
+                    } else if (e.key === 'Enter') {
+                      if (highlightedCustomerIndex >= 0) {
+                        selectCustomer(filteredCustomers[highlightedCustomerIndex]);
+                        setTimeout(() => productNoRef.current?.focus(), 0);
+                      }
+                      e.preventDefault();
+                    }
+                  }
+                }}
                 className="mt-1 block w-full border p-2"
                 disabled={customerName === "Cash"}
               />
               {showCustomerDropdown && isTypingCustomerNumber && (
                 <div className="absolute top-full left-0 w-full z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-y-auto">
-                  {filteredCustomers.map((customer, index) => (
-                    <div
-                      key={customer._id}
-                      className={`p-2 hover:bg-gray-100 cursor-pointer ${index === highlightedCustomerIndex ? 'bg-gray-200' : ''}`}
-                      onClick={() => selectCustomer(customer)}
-                    >
-                      {customer.customerPhone} - {customer.customerName}
-                    </div>
-                  ))}
+                  {filteredCustomers.length > 0 ? (
+                    filteredCustomers.map((customer, index) => (
+                      <div
+                        key={customer._id}
+                        className={`p-2 hover:bg-gray-100 cursor-pointer ${index === highlightedCustomerIndex ? 'bg-gray-200' : ''}`}
+                        onMouseDown={() => {
+                          selectCustomer(customer);
+                          setTimeout(() => productNoRef.current?.focus(), 0);
+                        }}
+                      >
+                        {customer.customerPhone} - {customer.customerName}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="customer-dropdown-item text-gray-500">No customers found</div>
+                  )}
                 </div>
               )}
             </div>
@@ -487,9 +519,29 @@ const POSBilling = () => {
                 placeholder="Customer Name"
                 value={customerName}
                 onChange={handleCustomerNameChange}
-                onFocus={() => setShowCustomerDropdown(true)}
+                onFocus={() => {
+                  setShowCustomerDropdown(true);
+                  filterCustomers(customerName);
+                  setHighlightedCustomerIndex(0); // Always highlight first
+                }}
                 onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 200)}
-                onKeyDown={handleCustomerKeyDown}
+                onKeyDown={(e) => {
+                  if (showCustomerDropdown && filteredCustomers.length > 0) {
+                    if (e.key === 'ArrowDown') {
+                      setHighlightedCustomerIndex((prev) => Math.min(prev + 1, filteredCustomers.length - 1));
+                      e.preventDefault();
+                    } else if (e.key === 'ArrowUp') {
+                      setHighlightedCustomerIndex((prev) => Math.max(prev - 1, 0));
+                      e.preventDefault();
+                    } else if (e.key === 'Enter') {
+                      if (highlightedCustomerIndex >= 0) {
+                        selectCustomer(filteredCustomers[highlightedCustomerIndex]);
+                        setTimeout(() => productNoRef.current?.focus(), 0);
+                      }
+                      e.preventDefault();
+                    }
+                  }
+                }}
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
               />
               {showCustomerDropdown && !isTypingCustomerNumber && (
@@ -499,7 +551,10 @@ const POSBilling = () => {
                       <div
                         key={customer._id}
                         className={`customer-dropdown-item ${index === highlightedCustomerIndex ? 'bg-gray-200' : ''}`}
-                        onMouseDown={() => selectCustomer(customer)}
+                        onMouseDown={() => {
+                          selectCustomer(customer);
+                          setTimeout(() => productNoRef.current?.focus(), 0);
+                        }}
                       >
                         {customer.customerName} - {customer.customerPhone || "No number"}
                       </div>
@@ -521,9 +576,33 @@ const POSBilling = () => {
                 type="text"
                 value={newProduct.productNo}
                 onChange={handleProductNumberChange}
-                onFocus={() => setShowProductDropdown(true)}
+                onFocus={() => {
+                  setShowProductDropdown(true);
+                  filterProducts(newProduct.productNo);
+                  setHighlightedProductIndex(0);
+                }}
                 onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
-                onKeyDown={handleProductKeyDown}
+                onKeyDown={(e) => {
+                  if (showProductDropdown && filteredProducts.length > 0) {
+                    if (e.key === 'ArrowDown') {
+                      setHighlightedProductIndex((prev) =>
+                        prev < filteredProducts.length - 1 ? prev + 1 : 0
+                      );
+                      e.preventDefault();
+                    } else if (e.key === 'ArrowUp') {
+                      setHighlightedProductIndex((prev) =>
+                        prev > 0 ? prev - 1 : filteredProducts.length - 1
+                      );
+                      e.preventDefault();
+                    } else if (e.key === 'Enter') {
+                      if (highlightedProductIndex >= 0) {
+                        selectProduct(filteredProducts[highlightedProductIndex]);
+                        setTimeout(() => quantityRef.current?.focus(), 0);
+                      }
+                      e.preventDefault();
+                    }
+                  }
+                }}
                 className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                 placeholder="Enter product number"
               />
@@ -534,7 +613,10 @@ const POSBilling = () => {
                       <div
                         key={product._id}
                         className={`product-dropdown-item ${index === highlightedProductIndex ? 'bg-gray-200' : ''}`}
-                        onMouseDown={() => selectProduct(product)}
+                        onMouseDown={() => {
+                          selectProduct(product);
+                          setTimeout(() => quantityRef.current?.focus(), 0);
+                        }}
                       >
                         {product.productNo} - {product.name}
                         <span className="float-right">Rs {product.price?.toFixed(2)}</span>
@@ -589,19 +671,24 @@ const POSBilling = () => {
                 type="number"
                 value={newProduct.quantity}
                 onChange={(e) => setNewProduct(prev => ({ ...prev, quantity: e.target.value }))}
-                onKeyDown={(e) => e.key === 'Enter' && addProduct()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    addProduct();
+                    setTimeout(() => productNoRef.current?.focus(), 0);
+                  }
+                }}
                 className="mt-1 block w-full border p-2"
                 min="1"
               />
             </div>
           </div>
-          <button
+          {/* <button
             onClick={addProduct}
             className="mt-2 add-to-cart-btn bg-blue-500 text-white p-2 addToCardBtn rounded"
             disabled={isLoading}
           >
             {editingIndex !== null ? "Update Product" : "Add to Cart"}
-          </button>
+          </button> */}
 
           {/* Cart Items Table */}
           <div className="table-container relative z-10 mt-4">
@@ -640,6 +727,12 @@ const POSBilling = () => {
                     </td>
                   </tr>
                 ))}
+                {/* Add empty rows if needed */}
+                {Array.from({ length: Math.max(0, 5 - selectedProducts.length) }).map((_, idx) => (
+                  <tr key={`empty-${idx}`}>
+                    <td className="border p-2" colSpan={6} style={{ height: '51px', background: '#f9fafb' }}></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -671,6 +764,11 @@ const POSBilling = () => {
                 className="mt-1 block w-full border p-2"
                 min="0"
                 step="0.01"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    saveBill();
+                  }
+                }}
               />
             </div>
           </div>
@@ -685,10 +783,10 @@ const POSBilling = () => {
               <span>Total Payable:</span>
               <span>Rs {calculateTotal()}</span>
             </div>
-            <div className="flex justify-between font-bold mb-2">
+            {/* <div className="flex justify-between font-bold mb-2">
               <span>Amount Paid:</span>
               <span>Rs {amountPaid || '0.00'}</span>
-            </div>
+            </div> */}
             <div className="flex justify-between font-bold">
               <span>Remaining Amount:</span>
               <span style={{ color: remainingAmount() < 0 ? 'red' : 'inherit' }}>
@@ -734,7 +832,18 @@ const POSBilling = () => {
             >
               New Display
             </button>
+
+             {/* Action Button */}
+          <Button
+            className="add-new"
+            type="primary"
+            onClick={() => setPopModal(true)}
+          >
+            Shortcuts
+          </Button>
           </div>
+          
+         
 
           <div style={{ display: "none" }}>
   <div 

@@ -859,7 +859,7 @@ const POSBilling = () => {
       lineHeight: '1.1',
       padding: '2mm',
       boxSizing: 'border-box',
-      fontWeight: 550  // Default bolder text
+      fontWeight: 550  
     }}
   >
     {/* Header with bolder text */}

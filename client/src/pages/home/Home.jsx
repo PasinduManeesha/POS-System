@@ -373,16 +373,9 @@ const POSBilling = () => {
       if (e.key === 'F1') {
         e.preventDefault();
         amountPaidInput.current?.focus();
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        if (!customerName || customerName.trim() === "") {
-          message.error("Please enter customer details before generating the bill.");
-        } else if (selectedProducts.length === 0) {
-          message.error("Cart items are required before generating the bill.");
-        } else {
-          saveBillRef.current?.();
-        }
-      } else if (e.key === 'F2') {
+      } 
+      // Remove Tab global handler for bill generation
+      else if (e.key === 'F2') {
         e.preventDefault();
         paymentMethodSelect.current?.focus();
       } else if (e.key === 'F3') {
@@ -681,6 +674,10 @@ const POSBilling = () => {
                   if (e.key === 'Enter') {
                     addProduct();
                     setTimeout(() => productNoRef.current?.focus(), 0);
+                  }
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    amountPaidInput.current?.focus();
                   }
                 }}
                 className="mt-1 block w-full border p-2"

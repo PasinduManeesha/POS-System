@@ -685,7 +685,7 @@ const POSBilling = () => {
               />
             </div>
           </div>
-          {/* <button
+          {/* <button  
             onClick={addProduct}
             className="mt-2 add-to-cart-btn bg-blue-500 text-white p-2 addToCardBtn rounded"
             disabled={isLoading}

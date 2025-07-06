@@ -1,0 +1,12 @@
+/* Highlight lost bill rows (profit < 0) */
+.negative-lost-row {
+  background-color: #fff1f0 !important;
+  color: #cf1322 !important;
+}
+
+.table-row-light {
+  background-color: #ffffff;
+}
+.table-row-dark {
+  background-color: #fafafa;
+}

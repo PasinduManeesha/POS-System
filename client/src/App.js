@@ -14,7 +14,7 @@ import Suppliers from "./pages/suppliers/suppliers";
 import Inventory from "./pages/inventory/inventory";
 import ProfitReport from "./pages/reports/profit";
 import CustomersCredit from "./pages/customers/CustomersCredit";
-//import DailyCollection from "./pages/reports/DailyCollection";
+import DailyCollection from "./pages/reports/DailyCollection";
 
 function App() {
   return (
@@ -103,14 +103,14 @@ function App() {
             }
           />
 
-          {/* <Route
+          { <Route
             path="/reports/daily"
             element={
               <ProtectedRouter>
                 <DailyCollection />
               </ProtectedRouter>
             }
-          /> */}
+          /> }
 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

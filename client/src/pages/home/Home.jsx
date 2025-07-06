@@ -873,7 +873,7 @@ const POSBilling = () => {
         src={Logo} 
         alt="Logo" 
         style={{ 
-          width: '20mm',  // Slightly smaller to save space
+          width: '20mm',  
           height: '20mm', 
           margin: '0 auto 2mm',
           objectFit: 'contain'

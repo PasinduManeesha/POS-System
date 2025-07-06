@@ -242,7 +242,7 @@ const DailyCashCollection = () => {
             style={{ 
               borderRadius: 8, 
               marginTop: 24, 
-              boxShadow: '0 2px 8px rgba(0,0,0,0.09)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.09)',mm
               background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)'
             }}
             title={<Text strong style={{ fontSize: 16 }}>Payment Methods</Text>}

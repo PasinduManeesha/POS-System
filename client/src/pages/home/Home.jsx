@@ -59,8 +59,9 @@ const POSBilling = () => {
 
   // Refs
   const componentRef = useRef();
-  const productNoRef = useRef(null);
-  const quantityRef = useRef(null);
+  const productNoRef = useRef();
+  const unitPriceRef = useRef();
+  const quantityRef = useRef();
   const amountPaidInput = useRef(null);
   const paymentMethodSelect = useRef(null);
   const customerNameInput = useRef(null);
@@ -241,7 +242,7 @@ const POSBilling = () => {
       cost: product.cost
     });
     setShowProductDropdown(false);
-    quantityRef.current?.focus();
+    setTimeout(() => unitPriceRef.current?.focus(), 0);
   };
 
   // Product management
@@ -337,7 +338,6 @@ const POSBilling = () => {
           totalItemCost: item.cost * item.quantity,
           profit: (item.unitPrice - item.cost) * item.quantity
         })),
-        createdAt: new Date()
       };
 
       const response = await axios.post(`${BASE_URL}/bills/addbills`, billData);
@@ -597,7 +597,7 @@ const POSBilling = () => {
                     } else if (e.key === 'Enter') {
                       if (highlightedProductIndex >= 0) {
                         selectProduct(filteredProducts[highlightedProductIndex]);
-                        setTimeout(() => quantityRef.current?.focus(), 0);
+                        setTimeout(() => unitPriceRef.current?.focus(), 0);
                       }
                       e.preventDefault();
                     }
@@ -615,7 +615,7 @@ const POSBilling = () => {
                         className={`product-dropdown-item ${index === highlightedProductIndex ? 'bg-gray-200' : ''}`}
                         onMouseDown={() => {
                           selectProduct(product);
-                          setTimeout(() => quantityRef.current?.focus(), 0);
+                          setTimeout(() => unitPriceRef.current?.focus(), 0);
                         }}
                       >
                         {product.productNo} - {product.name}
@@ -658,9 +658,15 @@ const POSBilling = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700">Unit Price</label>
               <input
+                ref={unitPriceRef}
                 type="number"
                 value={newProduct.unitPrice}
                 onChange={(e) => setNewProduct(prev => ({ ...prev, unitPrice: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    quantityRef.current?.focus();
+                  }
+                }}
                 className="mt-1 block w-full border p-2"
               />
             </div>
@@ -948,7 +954,7 @@ const POSBilling = () => {
             <td style={{ padding: '1.5mm 0', verticalAlign: 'top' }}>{index + 1}</td>
             <td style={{ padding: '1.5mm 0', verticalAlign: 'top' }}>
               <div style={{ fontWeight: 'bold' }}>{product.itemDescription}</div>
-              <div style={{ fontSize: '8pt' }}>({product.productNo})</div>
+              {/* <div style={{ fontSize: '8pt' }}>({product.productNo})</div> */}
             </td>
             <td style={{ padding: '1.5mm 0', textAlign: 'right', verticalAlign: 'top' }}>
               {product.unitPrice?.toFixed(2)}
@@ -1036,9 +1042,9 @@ const POSBilling = () => {
       }}>
         THANK YOU FOR YOUR BUSINESS!
       </div>
-      <div style={{ fontSize: '8pt', fontWeight: 'bold' }}>
+      {/* <div style={{ fontSize: '8pt', fontWeight: 'bold' }}>
         {moment().format('DD MMM YYYY hh:mm A')}
-      </div>
+      </div> */}
       <div style={{ 
         fontSize: '8pt', 
         marginTop: '2mm',
